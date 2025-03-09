@@ -7,15 +7,15 @@ using AndroidX.Camera.Core.ResolutionSelector;
 using AndroidX.Camera.Lifecycle;
 using AndroidX.Core.Content;
 using AndroidX.Lifecycle;
-using CommunityToolkit.Maui.Core.Primitives;
-using CommunityToolkit.Maui.Extensions;
+using CommunityToolkit.Uno.Core.Primitives;
+using CommunityToolkit.Uno.Extensions;
 using Java.Lang;
 using Java.Util.Concurrent;
 using Windows.Foundation;
 using static Android.Media.Image;
 using Math = System.Math;
 
-namespace CommunityToolkit.Maui.Core;
+namespace CommunityToolkit.Uno.Core;
 
 [SupportedOSPlatform("android21.0")]
 partial class CameraManager

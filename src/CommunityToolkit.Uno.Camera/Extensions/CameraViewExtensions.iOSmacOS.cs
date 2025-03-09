@@ -1,9 +1,9 @@
 ﻿#if IOS || MACCATALYST
 using AVFoundation;
-using CommunityToolkit.Maui.Core;
-using CommunityToolkit.Maui.Core.Primitives;
+using CommunityToolkit.Uno.Core;
+using CommunityToolkit.Uno.Core.Primitives;
 
-namespace CommunityToolkit.Maui.Extensions;
+namespace CommunityToolkit.Uno.Extensions;
 
 /// <summary>
 /// Extension methods for the CameraView on iOS/macOS.

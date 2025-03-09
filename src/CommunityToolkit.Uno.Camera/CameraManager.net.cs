@@ -1,7 +1,7 @@
-using CommunityToolkit.Maui.Core.Primitives;
+using CommunityToolkit.Uno.Core.Primitives;
 using Windows.Foundation;
 
-namespace CommunityToolkit.Maui.Core;
+namespace CommunityToolkit.Uno.Core;
 
 partial class CameraManager
 {

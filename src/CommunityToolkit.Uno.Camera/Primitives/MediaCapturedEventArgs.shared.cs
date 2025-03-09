@@ -1,4 +1,4 @@
-﻿namespace CommunityToolkit.Maui.Views;
+﻿namespace CommunityToolkit.Uno.Views;
 
 /// <summary>
 /// Event args containing all contextual information related to media capture event.

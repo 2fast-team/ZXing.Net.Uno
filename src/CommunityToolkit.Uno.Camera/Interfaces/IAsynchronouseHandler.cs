@@ -1,4 +1,4 @@
-namespace CommunityToolkit.Maui.Camera;
+namespace CommunityToolkit.Uno.Camera;
 
 /// <summary>
 /// Interface that allows asynchronous completion of .NET MAUI Handlers

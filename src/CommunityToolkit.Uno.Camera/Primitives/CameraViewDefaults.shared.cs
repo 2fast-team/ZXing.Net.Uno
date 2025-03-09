@@ -1,8 +1,8 @@
 using System.ComponentModel;
 using System.Runtime.Versioning;
-using CommunityToolkit.Maui.Core.Primitives;
+using CommunityToolkit.Uno.Core.Primitives;
 using Windows.Foundation;
-namespace CommunityToolkit.Maui.Core;
+namespace CommunityToolkit.Uno.Core;
 
 /// <summary>Default Values for <see cref="ICameraView"/>"/></summary>
 [SupportedOSPlatform("windows10.0.17763.0")]

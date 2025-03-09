@@ -2,10 +2,10 @@
 using Android.Content;
 using Android.Content.PM;
 using AndroidX.Camera.Core;
-using CommunityToolkit.Maui.Core;
-using CommunityToolkit.Maui.Core.Primitives;
+using CommunityToolkit.Uno.Core;
+using CommunityToolkit.Uno.Core.Primitives;
 
-namespace CommunityToolkit.Maui.Extensions;
+namespace CommunityToolkit.Uno.Extensions;
 
 /// <summary>
 /// Extension methods for the CameraView on Android.

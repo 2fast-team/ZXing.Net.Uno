@@ -1,4 +1,4 @@
-﻿namespace CommunityToolkit.Maui.Core;
+﻿namespace CommunityToolkit.Uno.Core;
 
 /// <summary>
 /// Implementation that provides the ability to discover cameras that are attached to the current device.

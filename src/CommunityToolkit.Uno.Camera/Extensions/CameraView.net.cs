@@ -1,1 +1,1 @@
-namespace CommunityToolkit.Maui.Extensions;
+namespace CommunityToolkit.Uno.Extensions;

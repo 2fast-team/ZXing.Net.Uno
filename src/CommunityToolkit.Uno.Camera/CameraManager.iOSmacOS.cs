@@ -1,14 +1,14 @@
 ﻿#if IOS || MACCATALYST
 using System.Diagnostics;
 using AVFoundation;
-using CommunityToolkit.Maui.Core.Primitives;
-using CommunityToolkit.Maui.Extensions;
+using CommunityToolkit.Uno.Core.Primitives;
+using CommunityToolkit.Uno.Extensions;
 using CoreMedia;
 using Foundation;
 using UIKit;
 using Windows.Foundation;
 
-namespace CommunityToolkit.Maui.Core;
+namespace CommunityToolkit.Uno.Core;
 
 partial class CameraManager
 {

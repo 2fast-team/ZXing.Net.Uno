@@ -1,5 +1,5 @@
 ﻿using System.Text;
-using CommunityToolkit.Maui.Core.Primitives;
+using CommunityToolkit.Uno.Core.Primitives;
 using Windows.Foundation;
 
 
@@ -12,7 +12,7 @@ using Windows.Media.Capture.Frames;
 using Windows.Media.MediaProperties;
 #endif
 
-namespace CommunityToolkit.Maui.Core;
+namespace CommunityToolkit.Uno.Core;
 
 /// <summary>
 /// Represents information about a camera device.

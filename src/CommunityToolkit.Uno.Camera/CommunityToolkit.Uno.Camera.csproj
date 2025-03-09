@@ -7,7 +7,8 @@
     <GenerateLibraryLayout>true</GenerateLibraryLayout>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-
+    <Platforms>AnyCPU;x64;ARM64</Platforms>
+	  <XamarinGoogleGuavaListenableFutureOptOut>true</XamarinGoogleGuavaListenableFutureOptOut>
     <!--
       UnoFeatures let's you quickly add and manage implicit package references based on the features you want to use.
       https://aka.platform.uno/singleproject-features
@@ -33,8 +34,20 @@
   </ItemGroup>
 
 	<ItemGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">
-		<PackageReference Include="Xamarin.AndroidX.Camera.Camera2" Version="1.4.1.1" />
-		<PackageReference Include="Xamarin.AndroidX.Camera.Lifecycle" Version="1.4.1.1" />
-		<PackageReference Include="Xamarin.AndroidX.Camera.View" Version="1.4.1.1" />
+		<PackageReference Include="Xamarin.AndroidX.Camera.Camera2" Version="1.3.4.3" />
+		<PackageReference Include="Xamarin.AndroidX.Camera.Lifecycle" Version="1.3.4.3" />
+		<PackageReference Include="Xamarin.AndroidX.Camera.View" Version="1.3.4.3" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Page Update="Controls\CameraControl.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </Page>
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Page Update="Themes\Generic.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </Page>
 	</ItemGroup>
 </Project>

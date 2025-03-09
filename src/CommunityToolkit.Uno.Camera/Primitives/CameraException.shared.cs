@@ -1,4 +1,4 @@
-namespace CommunityToolkit.Maui.Core;
+namespace CommunityToolkit.Uno.Core;
 
 /// <summary>
 /// <see cref="Exception"/> that can be thrown when the <see cref="ICameraView"/> implementation

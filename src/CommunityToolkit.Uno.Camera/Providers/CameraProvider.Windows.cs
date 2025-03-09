@@ -1,6 +1,6 @@
 ﻿#if WINDOWS
-using CommunityToolkit.Maui.Core.Primitives;
-using CommunityToolkit.Maui.Extensions;
+using CommunityToolkit.Uno.Core.Primitives;
+using CommunityToolkit.Uno.Extensions;
 using Windows.Devices.Enumeration;
 using Windows.Foundation;
 using Windows.Media.Capture;
@@ -8,7 +8,7 @@ using Windows.Media.Capture.Frames;
 using Windows.Media.MediaProperties;
 using Panel = Windows.Devices.Enumeration.Panel;
 
-namespace CommunityToolkit.Maui.Core;
+namespace CommunityToolkit.Uno.Core;
 
 partial class CameraProvider
 {

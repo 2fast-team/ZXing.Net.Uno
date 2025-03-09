@@ -1,15 +1,14 @@
 ﻿#if WINDOWS
 using System.Runtime.Versioning;
-using CommunityToolkit.Maui.Core.Primitives;
-using CommunityToolkit.Maui.Extensions;
-using Microsoft.UI.Xaml.Controls;
+using CommunityToolkit.Uno.Core.Primitives;
+using CommunityToolkit.Uno.Extensions;
 using Windows.Foundation;
 using Windows.Media.Capture;
 using Windows.Media.Capture.Frames;
 using Windows.Media.Core;
 using Windows.Media.MediaProperties;
 
-namespace CommunityToolkit.Maui.Core;
+namespace CommunityToolkit.Uno.Core;
 
 [SupportedOSPlatform("windows10.0.17763.0")]
 partial class CameraManager

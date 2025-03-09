@@ -1,9 +1,9 @@
 ﻿#if WINDOWS
-using CommunityToolkit.Maui.Core;
+using CommunityToolkit.Uno.Core;
 using Windows.Devices.Enumeration;
 using Windows.Media.Capture;
 
-namespace CommunityToolkit.Maui.Extensions;
+namespace CommunityToolkit.Uno.Extensions;
 
 static class CameraViewExtensions
 {

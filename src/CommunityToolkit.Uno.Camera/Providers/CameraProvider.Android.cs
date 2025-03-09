@@ -8,11 +8,11 @@ using AndroidX.Camera.Camera2.InterOp;
 using AndroidX.Camera.Core;
 using AndroidX.Camera.Lifecycle;
 using AndroidX.Core.Content;
-using CommunityToolkit.Maui.Core.Primitives;
+using CommunityToolkit.Uno.Core.Primitives;
 using Java.Lang;
 using Windows.Foundation;
 
-namespace CommunityToolkit.Maui.Core;
+namespace CommunityToolkit.Uno.Core;
 
 [SupportedOSPlatform("Android21.0")]
 partial class CameraProvider

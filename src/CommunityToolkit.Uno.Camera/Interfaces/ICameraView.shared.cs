@@ -1,8 +1,8 @@
-﻿using CommunityToolkit.Maui.Camera;
-using CommunityToolkit.Maui.Core.Primitives;
+﻿using CommunityToolkit.Uno.Camera;
+using CommunityToolkit.Uno.Core.Primitives;
 using Windows.Foundation;
 
-namespace CommunityToolkit.Maui.Core;
+namespace CommunityToolkit.Uno.Core;
 
 /// <summary>
 /// Represents a visual element that provides the ability to show a camera preview and capture images.
