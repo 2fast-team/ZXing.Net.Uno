@@ -7,8 +7,18 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="local:CameraControl">
-                    <Grid Background="Red" Height="50" Width="50">
-
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <Grid x:Name="MainGrid" MinHeight="100" MinWidth="100"/>
+                        <!--<MediaPlayerElement 
+                            x:Name="CameraPlayerElement"
+                            VerticalAlignment="Center"
+                            VerticalContentAlignment="Center"/>-->
                     </Grid>
                 </ControlTemplate>
             </Setter.Value>

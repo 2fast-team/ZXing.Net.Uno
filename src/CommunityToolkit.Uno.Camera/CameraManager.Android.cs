@@ -21,7 +21,6 @@ namespace CommunityToolkit.Uno.Core;
 partial class CameraManager
 {
 	readonly Context context = ContextHelper.Current ?? throw new CameraException($"Unable to retrieve {nameof(Context)}");
-
 	NativePlatformCameraPreviewView? previewView;
 	IExecutorService? cameraExecutor;
 	ProcessCameraProvider? processCameraProvider;
@@ -33,7 +32,7 @@ partial class CameraManager
 	ResolutionSelector? resolutionSelector;
 	ResolutionFilter? resolutionFilter;
 
-	public void Dispose()
+    public void Dispose()
 	{
 		Dispose(true);
 		GC.SuppressFinalize(this);

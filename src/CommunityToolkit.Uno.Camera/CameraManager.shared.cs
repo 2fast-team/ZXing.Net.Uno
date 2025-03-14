@@ -15,9 +15,9 @@ namespace CommunityToolkit.Uno.Core;
 /// <exception cref="NullReferenceException">Thrown when no <see cref="CameraProvider"/> can be resolved.</exception>
 /// <exception cref="InvalidOperationException">Thrown when there are no cameras available.</exception>
 partial class CameraManager(
-	ICameraView cameraView,
-	ICameraProvider cameraProvider,
-	Action onLoaded) : IDisposable
+    ICameraView cameraView,
+    ICameraProvider cameraProvider,
+    Action onLoaded) : IDisposable
 {
 	internal Action OnLoaded { get; } = onLoaded;
 
