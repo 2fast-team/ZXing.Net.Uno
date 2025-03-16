@@ -14,7 +14,8 @@
         <TextBlock AutomationProperties.AutomationId="HelloTextBlock"
           Text="Hello Uno Platform!"
           HorizontalAlignment="Center" />
-        <controls:CameraControl/>
+                <controls:CameraBarcodeReaderControl
+                    BarcodesDetected="CameraBarcodeReaderControl_BarcodesDetected"/>
         </StackPanel>
     </Grid>
   </ScrollViewer>

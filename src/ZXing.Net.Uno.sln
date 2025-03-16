@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CommunityToolkit.Uno.Camera
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZXing.Net.Uno.Sample", "ZXing.Net.Uno.Sample\ZXing.Net.Uno.Sample\ZXing.Net.Uno.Sample.csproj", "{D452518F-04C9-A071-AA5A-94EFA575DC25}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZXing.Net.Uno", "ZXing.Net.Uno\ZXing.Net.Uno.csproj", "{4CD19D6E-D37D-4F8B-A0A4-0C2E554A406F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -47,6 +49,18 @@ Global
 		{D452518F-04C9-A071-AA5A-94EFA575DC25}.Release|x64.ActiveCfg = Release|x64
 		{D452518F-04C9-A071-AA5A-94EFA575DC25}.Release|x64.Build.0 = Release|x64
 		{D452518F-04C9-A071-AA5A-94EFA575DC25}.Release|x64.Deploy.0 = Release|x64
+		{4CD19D6E-D37D-4F8B-A0A4-0C2E554A406F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4CD19D6E-D37D-4F8B-A0A4-0C2E554A406F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4CD19D6E-D37D-4F8B-A0A4-0C2E554A406F}.Debug|ARM64.ActiveCfg = Debug|Any CPU
+		{4CD19D6E-D37D-4F8B-A0A4-0C2E554A406F}.Debug|ARM64.Build.0 = Debug|Any CPU
+		{4CD19D6E-D37D-4F8B-A0A4-0C2E554A406F}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{4CD19D6E-D37D-4F8B-A0A4-0C2E554A406F}.Debug|x64.Build.0 = Debug|Any CPU
+		{4CD19D6E-D37D-4F8B-A0A4-0C2E554A406F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4CD19D6E-D37D-4F8B-A0A4-0C2E554A406F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4CD19D6E-D37D-4F8B-A0A4-0C2E554A406F}.Release|ARM64.ActiveCfg = Release|Any CPU
+		{4CD19D6E-D37D-4F8B-A0A4-0C2E554A406F}.Release|ARM64.Build.0 = Release|Any CPU
+		{4CD19D6E-D37D-4F8B-A0A4-0C2E554A406F}.Release|x64.ActiveCfg = Release|Any CPU
+		{4CD19D6E-D37D-4F8B-A0A4-0C2E554A406F}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

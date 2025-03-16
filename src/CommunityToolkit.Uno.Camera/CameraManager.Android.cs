@@ -14,6 +14,7 @@ using Java.Util.Concurrent;
 using Windows.Foundation;
 using static Android.Media.Image;
 using Math = System.Math;
+using ZXing.Net.Uno;
 
 namespace CommunityToolkit.Uno.Core;
 
@@ -26,11 +27,14 @@ partial class CameraManager
 	ProcessCameraProvider? processCameraProvider;
 	ImageCapture? imageCapture;
 	ImageCallBack? imageCallback;
-	ICamera? camera;
+    ImageAnalysis imageAnalyzer;
+    ICamera? camera;
 	ICameraControl? cameraControl;
 	Preview? cameraPreview;
 	ResolutionSelector? resolutionSelector;
 	ResolutionFilter? resolutionFilter;
+
+    public Android.Util.Size DefaultTargetResolution => new Android.Util.Size(200, 200);
 
     public void Dispose()
 	{
@@ -191,7 +195,22 @@ partial class CameraManager
 		.SetResolutionSelector(resolutionSelector)
 		.Build();
 
-		await StartCameraPreview(token);
+        // If we are analyzing images, we need to set up the image analyzer
+        if (AnalyseImages)
+		{
+            // Frame by frame analyze
+            imageAnalyzer = new ImageAnalysis.Builder()
+				.SetDefaultResolution(DefaultTargetResolution)
+                .SetResolutionSelector(resolutionSelector)
+                .SetBackpressureStrategy(ImageAnalysis.StrategyKeepOnlyLatest)
+                .Build();
+
+            imageAnalyzer.SetAnalyzer(cameraExecutor, new FrameAnalyzer((buffer, size) =>
+                FrameReady?.Invoke(this, new CameraFrameBufferEventArgs(
+					new ZXing.Net.Uno.Readers.PixelBufferHolder { Data = buffer, Size = new Size(size.Width,size.Height) }))));
+        }
+
+        await StartCameraPreview(token);
 	}
 
 	protected virtual async Task PlatformStartCameraPreview(CancellationToken token)
@@ -214,7 +233,15 @@ partial class CameraManager
 		var cameraSelector = cameraView.SelectedCamera.CameraSelector ?? throw new CameraException($"Unable to retrieve {nameof(CameraSelector)}");
 
 		var owner = (ILifecycleOwner)context;
-		camera = processCameraProvider.BindToLifecycle(owner, cameraSelector, cameraPreview, imageCapture);
+		if (AnalyseImages)
+		{
+            camera = processCameraProvider.BindToLifecycle(owner, cameraSelector, cameraPreview, imageCapture, imageAnalyzer);
+        }
+		else
+		{
+            camera = processCameraProvider.BindToLifecycle(owner, cameraSelector, cameraPreview, imageCapture);
+        }
+			
 
 		cameraControl = camera.CameraControl;
 

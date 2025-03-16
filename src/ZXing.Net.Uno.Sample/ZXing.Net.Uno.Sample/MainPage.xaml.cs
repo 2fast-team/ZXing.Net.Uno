@@ -6,4 +6,9 @@ public sealed partial class MainPage : Page
     {
         this.InitializeComponent();
     }
+
+    private void CameraBarcodeReaderControl_BarcodesDetected(object sender, BarcodeDetectionEventArgs e)
+    {
+
+    }
 }

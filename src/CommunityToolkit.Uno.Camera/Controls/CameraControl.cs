@@ -1,21 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
+﻿using System.ComponentModel;
 using CommunityToolkit.Uno.Core;
 using CommunityToolkit.Uno.Core.Primitives;
-using CommunityToolkit.Uno.Views;
-using Microsoft.UI;
-using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Data;
-using Microsoft.UI.Xaml.Documents;
-using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media;
 using Windows.Foundation;
-using Windows.Media.Capture;
-using Windows.Media.Core;
 
 namespace CommunityToolkit.Uno.Camera.Controls
 {
@@ -48,16 +34,11 @@ namespace CommunityToolkit.Uno.Camera.Controls
 
         private async Task StartCamara()
         {
-
-
-            MainGrid.Background = new SolidColorBrush(Colors.Red);
-
             var previewView = CameraManager.CreatePlatformView();
             MainGrid.Children.Add(previewView);
 
             await CameraManager.UpdateCaptureResolution(MainGrid.DesiredSize, CancellationToken.None);
             await CameraManager.ConnectCamera(CancellationToken.None);
-            //await CameraManager.StartCameraPreview(CancellationToken.None);
         }
 
         /// <summary>
@@ -196,8 +177,6 @@ namespace CommunityToolkit.Uno.Camera.Controls
             set => SetValue(IsCameraBusyProperty, value);
         }
 
-        public TaskCompletionSource HandlerCompleteTCS => throw new NotImplementedException();
-
         public void OnMediaCaptured(Stream imageData)
         {
             throw new NotImplementedException();
@@ -226,7 +205,7 @@ namespace CommunityToolkit.Uno.Camera.Controls
 
             handlerCompletedTCS = new();
 
-            CameraManager.StartCameraPreview(token);
+            await CameraManager.StartCameraPreview(token);
             //Handler?.Invoke(nameof(ICameraView.StartCameraPreview));
 
             await handlerCompletedTCS.Task.WaitAsync(token);

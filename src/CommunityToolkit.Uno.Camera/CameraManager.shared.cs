@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Uno.Core.Primitives;
 using Windows.Foundation;
+using ZXing.Net.Uno;
 
 namespace CommunityToolkit.Uno.Core;
 
@@ -12,22 +13,28 @@ namespace CommunityToolkit.Uno.Core;
 /// <param name="cameraView">The <see cref="ICameraView"/> implementation.</param>
 /// <param name="cameraProvider">The <see cref="CameraProvider"/> implementation.</param>
 /// <param name="onLoaded">The <see cref="Action"/> to execute when the camera is loaded.</param>
+/// <param name="analyseImages">The <see cref="bool"/> determines whether the images are analysed for barcode recognition.</param>
 /// <exception cref="NullReferenceException">Thrown when no <see cref="CameraProvider"/> can be resolved.</exception>
 /// <exception cref="InvalidOperationException">Thrown when there are no cameras available.</exception>
 partial class CameraManager(
     ICameraView cameraView,
     ICameraProvider cameraProvider,
-    Action onLoaded) : IDisposable
+    Action onLoaded,
+    bool analyseImages = false) : IDisposable
 {
 	internal Action OnLoaded { get; } = onLoaded;
 
 	internal bool IsInitialized { get; private set; }
 
-	/// <summary>
-	/// Connects to the camera.
-	/// </summary>
-	/// <returns>A <see cref="ValueTask"/> that can be awaited.</returns>
-	public Task ConnectCamera(CancellationToken token) => PlatformConnectCamera(token);
+    internal bool AnalyseImages { get; } = analyseImages;
+
+    public event EventHandler<CameraFrameBufferEventArgs> FrameReady;
+
+    /// <summary>
+    /// Connects to the camera.
+    /// </summary>
+    /// <returns>A <see cref="ValueTask"/> that can be awaited.</returns>
+    public Task ConnectCamera(CancellationToken token) => PlatformConnectCamera(token);
 
     /// <summary>
     /// Disconnects from the camera.

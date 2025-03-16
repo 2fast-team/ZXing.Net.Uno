@@ -2,7 +2,6 @@
 using CommunityToolkit.Uno.Core.Primitives;
 using Windows.Foundation;
 
-
 #if IOS || MACCATALYST
 using AVFoundation;
 #elif ANDROID
