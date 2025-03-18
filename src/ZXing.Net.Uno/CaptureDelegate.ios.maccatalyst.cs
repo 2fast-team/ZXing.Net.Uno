@@ -8,7 +8,7 @@ using UIKit;
 
 namespace ZXing.Net.Uno
 {
-	class CaptureDelegate : NSObject, IAVCaptureVideoDataOutputSampleBufferDelegate
+	public class CaptureDelegate : NSObject, IAVCaptureVideoDataOutputSampleBufferDelegate
 	{
 		public Action<CVPixelBuffer> SampleProcessor { get; set; }
 

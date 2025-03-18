@@ -6,7 +6,7 @@ public class BarcodeDetectionEventArgs : EventArgs
 		: base()
 	{
 		Results = results;
-	}
+    }
 
-	public BarcodeResult[] Results { get; private set; }
+    public BarcodeResult[] Results { get; private set; }
 }

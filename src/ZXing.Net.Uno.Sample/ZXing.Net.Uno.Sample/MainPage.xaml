@@ -14,8 +14,11 @@
         <TextBlock AutomationProperties.AutomationId="HelloTextBlock"
           Text="Hello Uno Platform!"
           HorizontalAlignment="Center" />
-                <controls:CameraBarcodeReaderControl
-                    BarcodesDetected="CameraBarcodeReaderControl_BarcodesDetected"/>
+        <TextBlock AutomationProperties.AutomationId="QRTextBlock"
+        Text="{x:Bind ViewModel.QRCodeResult, Mode=OneWay}"
+        HorizontalAlignment="Center" />
+        <controls:CameraBarcodeReaderControl
+            BarcodesDetected="CameraBarcodeReaderControl_BarcodesDetected"/>
         </StackPanel>
     </Grid>
   </ScrollViewer>

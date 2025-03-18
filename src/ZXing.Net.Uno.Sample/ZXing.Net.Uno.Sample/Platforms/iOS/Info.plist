@@ -33,6 +33,8 @@
 		<string>Assets.xcassets/icon.appiconset</string>
 		<key>UIApplicationSupportsIndirectInputEvents</key>
 		<true/>
+		<key>NSCameraUsageDescription</key>
+		<string>This app uses barcode scanning to...</string>
 
 		<!--
 		Adjust this to your application's encryption usage.

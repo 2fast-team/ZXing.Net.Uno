@@ -3,10 +3,13 @@ using System.Diagnostics;
 using AVFoundation;
 using CommunityToolkit.Uno.Core.Primitives;
 using CommunityToolkit.Uno.Extensions;
+using CoreFoundation;
 using CoreMedia;
+using CoreVideo;
 using Foundation;
 using UIKit;
 using Windows.Foundation;
+using ZXing.Net.Uno;
 
 namespace CommunityToolkit.Uno.Core;
 
@@ -15,34 +18,37 @@ partial class CameraManager
 	// TODO: Check if we really need this
 	readonly NSDictionary<NSString, NSObject> codecSettings = new([AVVideo.CodecKey], [new NSString("jpeg")]);
 
-	AVCaptureSession? captureSession;
-	AVCapturePhotoOutput? photoOutput;
-	AVCaptureInput? captureInput;
-	AVCaptureDevice? captureDevice;
+	AVCaptureSession? _captureSession;
+	AVCapturePhotoOutput? _photoOutput;
+	AVCaptureInput? _captureInput;
+	AVCaptureDevice? _captureDevice;
+    AVCaptureVideoDataOutput? _videoDataOutput;
+    CaptureDelegate _captureDelegate;
+    DispatchQueue _dispatchQueue;
 
-	AVCaptureFlashMode flashMode;
+    AVCaptureFlashMode _flashMode;
 
-	IDisposable? orientationDidChangeObserver;
-	PreviewView? previewView;
-	AVCaptureVideoOrientation videoOrientation;
+	IDisposable? _orientationDidChangeObserver;
+	PreviewView? _previewView;
+	AVCaptureVideoOrientation _videoOrientation;
 
 	// IN the future change the return type to be an alias
 	public UIView CreatePlatformView()
 	{
-		captureSession = new AVCaptureSession
+		_captureSession = new AVCaptureSession
 		{
 			SessionPreset = AVCaptureSession.PresetPhoto
 		};
 
-		previewView = new PreviewView
+		_previewView = new PreviewView
 		{
-			Session = captureSession
+			Session = _captureSession
 		};
 
-		orientationDidChangeObserver = UIDevice.Notifications.ObserveOrientationDidChange((_, _) => UpdateVideoOrientation());
+		_orientationDidChangeObserver = UIDevice.Notifications.ObserveOrientationDidChange((_, _) => UpdateVideoOrientation());
 		UpdateVideoOrientation();
 
-		return previewView;
+		return _previewView;
 	}
 
 	/// <inheritdoc/>
@@ -54,40 +60,40 @@ partial class CameraManager
 
 	public void UpdateFlashMode(CameraFlashMode flashMode)
 	{
-		this.flashMode = flashMode.ToPlatform();
+		this._flashMode = flashMode.ToPlatform();
 	}
 
 	public void UpdateZoom(float zoomLevel)
 	{
-		if (!IsInitialized || captureDevice is null)
+		if (!IsInitialized || _captureDevice is null)
 		{
 			return;
 		}
 
-		if (zoomLevel < (float)captureDevice.MinAvailableVideoZoomFactor || zoomLevel > (float)captureDevice.MaxAvailableVideoZoomFactor)
+		if (zoomLevel < (float)_captureDevice.MinAvailableVideoZoomFactor || zoomLevel > (float)_captureDevice.MaxAvailableVideoZoomFactor)
 		{
 			return;
 		}
 
-		captureDevice.LockForConfiguration(out NSError? error);
+		_captureDevice.LockForConfiguration(out NSError? error);
 		if (error is not null)
 		{
 			Trace.WriteLine(error);
 			return;
 		}
 
-		captureDevice.VideoZoomFactor = zoomLevel;
-		captureDevice.UnlockForConfiguration();
+		_captureDevice.VideoZoomFactor = zoomLevel;
+		_captureDevice.UnlockForConfiguration();
 	}
 
 	public async ValueTask UpdateCaptureResolution(Size resolution, CancellationToken token)
 	{
-		if (captureDevice is null)
+		if (_captureDevice is null)
 		{
 			return;
 		}
 
-		captureDevice.LockForConfiguration(out NSError? error);
+		_captureDevice.LockForConfiguration(out NSError? error);
 		if (error is not null)
 		{
 			Trace.WriteLine(error);
@@ -115,10 +121,10 @@ partial class CameraManager
 
 		if (filteredFormatList.Count is not 0)
 		{
-			captureDevice.ActiveFormat = filteredFormatList.First();
+			_captureDevice.ActiveFormat = filteredFormatList.First();
 		}
 
-		captureDevice.UnlockForConfiguration();
+		_captureDevice.UnlockForConfiguration();
 	}
 
 	protected virtual async Task PlatformConnectCamera(CancellationToken token)
@@ -138,16 +144,16 @@ partial class CameraManager
 
 	protected virtual async Task PlatformStartCameraPreview(CancellationToken token)
 	{
-		if (captureSession is null)
+		if (_captureSession is null)
 		{
 			return;
 		}
 
-		captureSession.BeginConfiguration();
+		_captureSession.BeginConfiguration();
 
-		foreach (var input in captureSession.Inputs)
+		foreach (var input in _captureSession.Inputs)
 		{
-			captureSession.RemoveInput(input);
+			_captureSession.RemoveInput(input);
 			input.Dispose();
 		}
 
@@ -157,34 +163,70 @@ partial class CameraManager
 			cameraView.SelectedCamera = cameraProvider.AvailableCameras?.FirstOrDefault() ?? throw new CameraException("No camera available on device");
 		}
 
-		captureDevice = cameraView.SelectedCamera.CaptureDevice ?? throw new CameraException($"No Camera found");
-		captureInput = new AVCaptureDeviceInput(captureDevice, out _);
-		captureSession.AddInput(captureInput);
+		_captureDevice = cameraView.SelectedCamera.CaptureDevice ?? throw new CameraException($"No Camera found");
+		_captureInput = new AVCaptureDeviceInput(_captureDevice, out _);
+		_captureSession.AddInput(_captureInput);
 
-		if (photoOutput is null)
+		if (_photoOutput is null)
 		{
-			photoOutput = new AVCapturePhotoOutput();
-			captureSession.AddOutput(photoOutput);
+			_photoOutput = new AVCapturePhotoOutput();
+			_captureSession.AddOutput(_photoOutput);
 		}
 
 		await UpdateCaptureResolution(cameraView.ImageCaptureResolution, token);
 
-		captureSession.CommitConfiguration();
-		captureSession.StartRunning();
+		_captureSession.CommitConfiguration();
+
+		if (AnalyseImages)
+		{
+            if (_videoDataOutput == null)
+            {
+                _videoDataOutput = new AVCaptureVideoDataOutput();
+
+                var videoSettings = NSDictionary.FromObjectAndKey(
+                    new NSNumber((int)CVPixelFormatType.CV32BGRA),
+                    CVPixelBuffer.PixelFormatTypeKey);
+
+                _videoDataOutput.WeakVideoSettings = videoSettings;
+
+                if (_captureDelegate == null)
+                {
+                    _captureDelegate = new CaptureDelegate
+                    {
+                        SampleProcessor = cvPixelBuffer =>
+                            FrameReady?.Invoke(this, new CameraFrameBufferEventArgs(new ZXing.Net.Uno.Readers.PixelBufferHolder
+                            {
+                                Data = cvPixelBuffer,
+                                Size = new Size(cvPixelBuffer.Width, cvPixelBuffer.Height)
+                            }))
+                    };
+                }
+
+                if (_dispatchQueue == null)
+                    _dispatchQueue = new DispatchQueue("CameraBufferQueue");
+
+                _videoDataOutput.AlwaysDiscardsLateVideoFrames = true;
+                _videoDataOutput.SetSampleBufferDelegate(_captureDelegate, _dispatchQueue);
+            }
+
+            _captureSession.AddOutput(_videoDataOutput);
+        }
+
+		_captureSession.StartRunning();
 		IsInitialized = true;
 		OnLoaded.Invoke();
 	}
 
 	protected virtual void PlatformStopCameraPreview()
 	{
-		if (captureSession is null)
+		if (_captureSession is null)
 		{
 			return;
 		}
 
-		if (captureSession.Running)
+		if (_captureSession.Running)
 		{
-			captureSession.StopRunning();
+			_captureSession.StopRunning();
 		}
 
 		IsInitialized = false;
@@ -196,23 +238,23 @@ partial class CameraManager
 
 	protected virtual async ValueTask PlatformTakePicture(CancellationToken token)
 	{
-		ArgumentNullException.ThrowIfNull(photoOutput);
+		ArgumentNullException.ThrowIfNull(_photoOutput);
 
 		var capturePhotoSettings = AVCapturePhotoSettings.FromFormat(codecSettings);
-		capturePhotoSettings.FlashMode = photoOutput.SupportedFlashModes.Contains(flashMode) ? flashMode : photoOutput.SupportedFlashModes.First();
+		capturePhotoSettings.FlashMode = _photoOutput.SupportedFlashModes.Contains(_flashMode) ? _flashMode : _photoOutput.SupportedFlashModes.First();
 
 		if (AVMediaTypes.Video.GetConstant() is NSString avMediaTypeVideo)
 		{
-			var photoOutputConnection = photoOutput.ConnectionFromMediaType(avMediaTypeVideo);
+			var photoOutputConnection = _photoOutput.ConnectionFromMediaType(avMediaTypeVideo);
 			if (photoOutputConnection is not null)
 			{
-				photoOutputConnection.VideoOrientation = videoOrientation;
+				photoOutputConnection.VideoOrientation = _videoOrientation;
 			}
 		}
 
 		var wrapper = new AVCapturePhotoCaptureDelegateWrapper();
 
-		photoOutput.CapturePhoto(capturePhotoSettings, wrapper);
+		_photoOutput.CapturePhoto(capturePhotoSettings, wrapper);
 
 		var result = await wrapper.Task.WaitAsync(token);
 		if (result.Error is not null)
@@ -253,18 +295,18 @@ partial class CameraManager
 	{
 		if (disposing)
 		{
-			captureSession?.StopRunning();
-			captureSession?.Dispose();
-			captureSession = null;
+			_captureSession?.StopRunning();
+			_captureSession?.Dispose();
+			_captureSession = null;
 
-			captureInput?.Dispose();
-			captureInput = null;
+			_captureInput?.Dispose();
+			_captureInput = null;
 
-			orientationDidChangeObserver?.Dispose();
-			orientationDidChangeObserver = null;
+			_orientationDidChangeObserver?.Dispose();
+			_orientationDidChangeObserver = null;
 
-			photoOutput?.Dispose();
-			photoOutput = null;
+			_photoOutput?.Dispose();
+			_photoOutput = null;
 		}
 	}
 
@@ -287,8 +329,8 @@ partial class CameraManager
 
 	void UpdateVideoOrientation()
 	{
-		videoOrientation = GetVideoOrientation();
-		previewView?.UpdatePreviewVideoOrientation(videoOrientation);
+		_videoOrientation = GetVideoOrientation();
+		_previewView?.UpdatePreviewVideoOrientation(_videoOrientation);
 	}
 
 	sealed class AVCapturePhotoCaptureDelegateWrapper : AVCapturePhotoCaptureDelegate
