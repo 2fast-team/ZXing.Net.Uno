@@ -15,6 +15,7 @@ using Windows.Foundation;
 using static Android.Media.Image;
 using Math = System.Math;
 using ZXing.Net.Uno;
+using Android.Views;
 
 namespace CommunityToolkit.Uno.Core;
 
@@ -33,6 +34,7 @@ partial class CameraManager
 	Preview? cameraPreview;
 	ResolutionSelector? resolutionSelector;
 	ResolutionFilter? resolutionFilter;
+    OrientationListener? orientationListener;
 
     public Android.Util.Size DefaultTargetResolution => new Android.Util.Size(200, 200);
 
@@ -52,8 +54,10 @@ partial class CameraManager
 			previewView.SetScaleType(NativePlatformCameraPreviewView.ScaleType.FitCenter);
 		}
 		cameraExecutor = Executors.NewSingleThreadExecutor() ?? throw new CameraException($"Unable to retrieve {nameof(IExecutorService)}");
+        orientationListener = new OrientationListener(SetImageCaptureTargetRotation, context);
+        orientationListener.Enable();
 
-		return previewView;
+        return previewView;
 	}
 
 	public void UpdateFlashMode(CameraFlashMode flashMode)
@@ -139,7 +143,10 @@ partial class CameraManager
 
 			resolutionFilter?.Dispose();
 			resolutionFilter = null;
-		}
+
+            orientationListener?.Disable();
+            orientationListener = null;
+        }
 	}
 
 	protected virtual async Task PlatformConnectCamera(CancellationToken token)
@@ -279,7 +286,21 @@ partial class CameraManager
 		return ValueTask.CompletedTask;
 	}
 
-	sealed class FutureCallback(Action<Java.Lang.Object?> action, Action<Throwable?> failure) : Java.Lang.Object, IFutureCallback
+    void SetImageCaptureTargetRotation(int rotation)
+    {
+        if (imageCapture is not null)
+        {
+            imageCapture.TargetRotation = rotation switch
+            {
+                >= 45 and < 135 => (int)SurfaceOrientation.Rotation270,
+                >= 135 and < 225 => (int)SurfaceOrientation.Rotation180,
+                >= 225 and < 315 => (int)SurfaceOrientation.Rotation90,
+                _ => (int)SurfaceOrientation.Rotation0
+            };
+        }
+    }
+
+    sealed class FutureCallback(Action<Java.Lang.Object?> action, Action<Throwable?> failure) : Java.Lang.Object, IFutureCallback
 	{
 		public void OnSuccess(Java.Lang.Object? value)
 		{
@@ -371,5 +392,20 @@ partial class CameraManager
 			observerAction.Invoke(value);
 		}
 	}
+
+    sealed class OrientationListener(Action<int> callback, Context context) : OrientationEventListener(context)
+    {
+        readonly Action<int> callback = callback;
+
+        public override void OnOrientationChanged(int orientation)
+        {
+            if (orientation == OrientationUnknown)
+            {
+                return;
+            }
+
+            callback.Invoke(orientation);
+        }
+    }
 }
 #endif
