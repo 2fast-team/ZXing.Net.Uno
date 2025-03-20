@@ -1,6 +1,8 @@
 ﻿using System.ComponentModel;
 using CommunityToolkit.Uno.Core;
 using CommunityToolkit.Uno.Core.Primitives;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Data;
 using Windows.Foundation;
 using ZXing;
 using ZXing.Net.Uno;
@@ -21,9 +23,9 @@ public sealed partial class CameraBarcodeReaderControl : Control, ICameraBarcode
     public CameraBarcodeReaderControl()
 	{
 		this.DefaultStyleKey = typeof(CameraBarcodeReaderControl);
-        CameraManager = new CameraManager(this, CameraProvider, () =>
+        CameraManager = new CameraManager(this, CameraProvider, async () =>
         {
-            //CameraManager.ConnectCamera(CancellationToken.None);
+            //await CameraManager.UpdateCaptureResolution(MainGrid.DesiredSize, CancellationToken.None);
         }, true);
 
         
@@ -33,13 +35,15 @@ public sealed partial class CameraBarcodeReaderControl : Control, ICameraBarcode
     {
         FrameReady?.Invoke(this, e);
 
-        if (IsDetecting)
-        {
-            var barcodes = BarcodeReader.Decode(e.Data);
+        //if (IsDetecting)
+        //{
 
-            if (barcodes?.Any() ?? false)
-                BarcodesDetected?.Invoke(this,new BarcodeDetectionEventArgs(barcodes));
-        }
+        //}
+
+        var barcodes = BarcodeReader.Decode(e.Data);
+
+        if (barcodes?.Any() ?? false)
+            BarcodesDetected?.Invoke(this, new BarcodeDetectionEventArgs(barcodes));
     }
 
     protected override void OnApplyTemplate()
@@ -208,6 +212,24 @@ public sealed partial class CameraBarcodeReaderControl : Control, ICameraBarcode
         set => SetValue(IsDetectingProperty, value);
     }
 
+    public static readonly DependencyProperty VidioFrameDividerProperty =
+    DependencyProperty.Register(
+        nameof(VidioFrameDivider),
+        typeof(int),
+        typeof(CameraBarcodeReaderControl),
+        new PropertyMetadata(20));
+
+    public int VidioFrameDivider
+    {
+        get => (int)GetValue(VidioFrameDividerProperty);
+        set
+        {
+            SetValue(VidioFrameDividerProperty, value);
+            CameraManager.VidioFrameDivider = value;
+        }
+            
+    }
+
     //static ICameraProvider CameraProvider => Application.Current?.Services.GetRequiredService<ICameraProvider>() ?? throw new CameraException("Unable to retrieve CameraProvider");
     static ICameraProvider CameraProvider { get; } = new CameraProvider();
 
@@ -228,10 +250,6 @@ public sealed partial class CameraBarcodeReaderControl : Control, ICameraBarcode
 
     void ICameraBarcodeReaderView.BarcodesDetected(BarcodeDetectionEventArgs e) => BarcodesDetected?.Invoke(this, e);
     void ICameraFrameAnalyzer.FrameReady(CameraFrameBufferEventArgs e) => FrameReady?.Invoke(this, e);
-
-    CameraFlashMode ICameraView.CameraFlashMode => throw new NotImplementedException();
-
-    Size ICameraView.ImageCaptureResolution => throw new NotImplementedException();
 
     public void OnMediaCaptured(Stream imageData)
     {

@@ -2,8 +2,11 @@
 using System.Runtime.Versioning;
 using CommunityToolkit.Uno.Core.Primitives;
 using CommunityToolkit.Uno.Extensions;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media.Imaging;
 using Windows.Foundation;
 using Windows.Graphics.Imaging;
+using Windows.Media;
 using Windows.Media.Capture;
 using Windows.Media.Capture.Frames;
 using Windows.Media.Core;
@@ -181,56 +184,47 @@ partial class CameraManager
     //Display the captured frame and send it to the registered FrameReady owner.
     private void ColorFrameReader_FrameArrived(MediaFrameReader sender, MediaFrameArrivedEventArgs args)
     {
-        var mediaFrameReference = sender.TryAcquireLatestFrame();
-        var videoMediaFrame = mediaFrameReference?.VideoMediaFrame;
-        var softwareBitmap = videoMediaFrame?.SoftwareBitmap;
+        // analyse only every _vidioFrameDivider value
+        if (_videoFrameCounter % VidioFrameDivider == 0)
+		{
+            var mediaFrameReference = sender.TryAcquireLatestFrame();
+            var videoMediaFrame = mediaFrameReference?.VideoMediaFrame;
+            var softwareBitmap = videoMediaFrame?.SoftwareBitmap;
+            var direct3DSurface = videoMediaFrame?.Direct3DSurface;
 
-        if (softwareBitmap != null)
-        {
-            //Convert to Bgra8 Premultiplied softwareBitmap.
-            if (softwareBitmap.BitmapPixelFormat != Windows.Graphics.Imaging.BitmapPixelFormat.Bgra8 ||
-                softwareBitmap.BitmapAlphaMode != Windows.Graphics.Imaging.BitmapAlphaMode.Premultiplied)
+            if (direct3DSurface != null)
             {
-                softwareBitmap = SoftwareBitmap.Convert(softwareBitmap, BitmapPixelFormat.Bgra8, BitmapAlphaMode.Premultiplied);
+                if (direct3DSurface != null)
+                {
+                    softwareBitmap = SoftwareBitmap.CreateCopyFromSurfaceAsync(direct3DSurface).GetAwaiter().GetResult();
+                }
+                if (softwareBitmap != null)
+                {
+                    //Convert to Bgra8 Premultiplied softwareBitmap.
+                    if (softwareBitmap.BitmapPixelFormat != Windows.Graphics.Imaging.BitmapPixelFormat.Bgra8 ||
+                        softwareBitmap.BitmapAlphaMode != Windows.Graphics.Imaging.BitmapAlphaMode.Premultiplied)
+                    {
+                        softwareBitmap = SoftwareBitmap.Convert(softwareBitmap, BitmapPixelFormat.Bgra8, BitmapAlphaMode.Premultiplied);
+                    }
+
+                    //Send bitmap to BarCodeReaderView/CameraView
+                    FrameReady?.Invoke(this, new CameraFrameBufferEventArgs(
+                        new ZXing.Net.Uno.Readers.PixelBufferHolder
+                        {
+                            Data = softwareBitmap,
+                            Size = new Size(softwareBitmap.PixelWidth, softwareBitmap.PixelHeight)
+                        }));
+
+                    // Swap the processed frame to _backBuffer and dispose of the unused image.
+                    //softwareBitmap = Interlocked.Exchange(ref _backBuffer, softwareBitmap);
+                    softwareBitmap?.Dispose();
+                    direct3DSurface?.Dispose();
+                }
             }
 
-            //Send bitmap to BarCodeReaderView/CameraView
-            FrameReady?.Invoke(this, new CameraFrameBufferEventArgs(
-                new ZXing.Net.Uno.Readers.PixelBufferHolder
-                {
-                    Data = softwareBitmap,
-                    Size = new Size(softwareBitmap.PixelWidth, softwareBitmap.PixelHeight)
-                }));
-
-            // Swap the processed frame to _backBuffer and dispose of the unused image.
-            softwareBitmap = Interlocked.Exchange(ref _backBuffer, softwareBitmap);
-            softwareBitmap?.Dispose();
-
-            // Changes to XAML ImageElement must happen on UI thread through Dispatcher
-            TryEnqueueUI(
-                async () =>
-                {
-                    // Don't let two copies of this task run at the same time.
-                    if (_taskRunning)
-                    {
-                        return;
-                    }
-                    _taskRunning = true;
-
-                    // Keep draining frames from the backbuffer until the backbuffer is empty.
-                    SoftwareBitmap latestBitmap;
-                    while ((latestBitmap = Interlocked.Exchange(ref _backBuffer, null)) != null)
-                    {
-                        var imageSource = (SoftwareBitmapSource)_imageElement.Source;
-                        await imageSource.SetBitmapAsync(latestBitmap);
-                        latestBitmap.Dispose();
-                    }
-
-                    _taskRunning = false;
-                });
+            mediaFrameReference?.Dispose();
         }
-
-        mediaFrameReference?.Dispose();
+        _videoFrameCounter++;
     }
 
     protected virtual async void PlatformStopCameraPreview()

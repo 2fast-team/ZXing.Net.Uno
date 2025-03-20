@@ -194,11 +194,18 @@ partial class CameraManager
                     _captureDelegate = new CaptureDelegate
                     {
                         SampleProcessor = cvPixelBuffer =>
-                            FrameReady?.Invoke(this, new CameraFrameBufferEventArgs(new ZXing.Net.Uno.Readers.PixelBufferHolder
-                            {
-                                Data = cvPixelBuffer,
-                                Size = new Size(cvPixelBuffer.Width, cvPixelBuffer.Height)
-                            }))
+						{
+                            // analyse only every _vidioFrameDivider value
+                            if (_videoFrameCounter % VidioFrameDivider == 0)
+							{
+								FrameReady?.Invoke(this, new CameraFrameBufferEventArgs(new ZXing.Net.Uno.Readers.PixelBufferHolder
+								{
+									Data = cvPixelBuffer,
+									Size = new Size(cvPixelBuffer.Width, cvPixelBuffer.Height)
+								}));
+                            }
+							_videoFrameCounter++;
+                        }
                     };
                 }
 

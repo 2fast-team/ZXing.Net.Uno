@@ -212,9 +212,17 @@ partial class CameraManager
                 .SetBackpressureStrategy(ImageAnalysis.StrategyKeepOnlyLatest)
                 .Build();
 
-            imageAnalyzer.SetAnalyzer(cameraExecutor, new FrameAnalyzer((buffer, size) =>
-                FrameReady?.Invoke(this, new CameraFrameBufferEventArgs(
-					new ZXing.Net.Uno.Readers.PixelBufferHolder { Data = buffer, Size = new Size(size.Width,size.Height) }))));
+			imageAnalyzer.SetAnalyzer(cameraExecutor, new FrameAnalyzer((buffer, size) =>
+			{
+				// analyse only every _vidioFrameDivider value
+				if (_videoFrameCounter % VidioFrameDivider == 0)
+				{
+					FrameReady?.Invoke(this, new CameraFrameBufferEventArgs(
+					new ZXing.Net.Uno.Readers.PixelBufferHolder { Data = buffer, Size = new Size(size.Width, size.Height) }));
+				}
+				_videoFrameCounter++;
+            }));
+                
         }
 
         await StartCameraPreview(token);

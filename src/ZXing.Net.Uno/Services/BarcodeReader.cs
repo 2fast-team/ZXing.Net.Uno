@@ -43,10 +43,18 @@ public class BarcodeReader : Readers.IBarcodeReader
 		if (Options.Multiple)
 			return zxingReader.DecodeMultiple(ls)?.ToBarcodeResults();
 
-		var b = zxingReader.Decode(ls)?.ToBarcodeResult();
-		if (b != null)
-			return new[] { b };
+		Result result;
+		try
+		{
+			result = zxingReader.Decode(ls);
+            if (result != null)
+                return new[] { result.ToBarcodeResult() };
+        }
+		catch (Exception)
+		{
+            return null;
+        }
 
-		return null;
+        return null;
 	}
 }

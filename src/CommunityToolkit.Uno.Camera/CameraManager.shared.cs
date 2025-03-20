@@ -28,6 +28,9 @@ partial class CameraManager(
 
     internal bool AnalyseImages { get; } = analyseImages;
 
+    private long _videoFrameCounter = 0;
+    public int VidioFrameDivider { get; set; } = 20; // every X frame for analyzing
+
     public event EventHandler<CameraFrameBufferEventArgs> FrameReady;
 
     /// <summary>

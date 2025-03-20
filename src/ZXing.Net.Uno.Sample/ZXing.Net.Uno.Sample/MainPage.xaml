@@ -18,6 +18,8 @@
         Text="{x:Bind ViewModel.QRCodeResult, Mode=OneWay}"
         HorizontalAlignment="Center" />
         <controls:CameraBarcodeReaderControl
+            x:Name="BarcodeReaderControl"
+            IsDetecting ="True"
             BarcodesDetected="CameraBarcodeReaderControl_BarcodesDetected"/>
         </StackPanel>
     </Grid>
