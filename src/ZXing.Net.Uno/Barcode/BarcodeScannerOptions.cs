@@ -4,7 +4,7 @@ public record BarcodeReaderOptions
 {
 	public bool AutoRotate { get; init; }
 
-	public bool TryHarder { get; init; } = true;
+	public bool TryHarder { get; init; }
 
 	public bool TryInverted { get; init; }
 

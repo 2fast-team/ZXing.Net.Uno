@@ -92,9 +92,42 @@ public partial class App : Application
             // When the navigation stack isn't restored navigate to the first page,
             // configuring the new page by passing required information as a navigation
             // parameter
-            rootFrame.Navigate(typeof(MainPage), args.Arguments);
+            CheckPermissionAndNavigate(rootFrame, args);
         }
         // Ensure the current window is active
         MainWindow.Activate();
+    }
+
+#if __ANDROID__
+    private async Task CheckPermissionAndNavigate(Frame frame, LaunchActivatedEventArgs args)
+#else
+    private Task CheckPermissionAndNavigate(Frame frame, LaunchActivatedEventArgs args)
+#endif
+    {
+#if __ANDROID__
+        // This will only check if the permission is granted but will not prompt the user.
+        bool isGranted = await Windows.Extensions.PermissionsHelper.CheckPermission(new System.Threading.CancellationToken(), Android.Manifest.Permission.Camera);
+
+        if (!isGranted)
+        {
+            // This will prompt the user with the native permission dialog if needed. If already granted it will simply return true.
+            bool isPermissionGranted = await Windows.Extensions.PermissionsHelper.TryGetPermission(new System.Threading.CancellationToken(), Android.Manifest.Permission.Camera);
+            if (isPermissionGranted)
+            {
+                frame.Navigate(typeof(MainPage), args.Arguments);
+            }
+            else
+            {
+                App.Current.Exit();
+            }
+        }
+        else
+        {
+            frame.Navigate(typeof(MainPage), args.Arguments);
+        }
+#else
+        frame.Navigate(typeof(MainPage), args.Arguments);
+        return Task.CompletedTask;
+#endif
     }
 }

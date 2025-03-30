@@ -241,6 +241,8 @@ partial class CameraManager
 
 	protected virtual void PlatformDisconnect()
 	{
+		PlatformStopCameraPreview();
+        Dispose();
 	}
 
 	protected virtual async ValueTask PlatformTakePicture(CancellationToken token)

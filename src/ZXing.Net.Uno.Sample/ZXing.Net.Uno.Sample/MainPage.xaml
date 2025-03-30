@@ -19,7 +19,7 @@
         HorizontalAlignment="Center" />
         <controls:CameraBarcodeReaderControl
             x:Name="BarcodeReaderControl"
-            IsDetecting ="True"
+            IsDetecting="{x:Bind ViewModel.IsDetecting, Mode=OneWay}"
             BarcodesDetected="CameraBarcodeReaderControl_BarcodesDetected"/>
         </StackPanel>
     </Grid>
