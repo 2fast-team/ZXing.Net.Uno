@@ -2,16 +2,12 @@
 using System.Runtime.Versioning;
 using CommunityToolkit.Uno.Core.Primitives;
 using CommunityToolkit.Uno.Extensions;
-using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Media.Imaging;
 using Windows.Foundation;
 using Windows.Graphics.Imaging;
-using Windows.Media;
 using Windows.Media.Capture;
 using Windows.Media.Capture.Frames;
 using Windows.Media.Core;
 using Windows.Media.MediaProperties;
-using ZXing;
 using ZXing.Net.Uno;
 
 namespace CommunityToolkit.Uno.Core;
@@ -90,7 +86,9 @@ partial class CameraManager
 
 	protected virtual void PlatformDisconnect()
 	{
-	}
+		PlatformStopCameraPreview();
+		Dispose();
+    }
 
 	protected virtual async ValueTask PlatformTakePicture(CancellationToken token)
 	{
@@ -189,20 +187,18 @@ partial class CameraManager
 		{
             var mediaFrameReference = sender.TryAcquireLatestFrame();
             var videoMediaFrame = mediaFrameReference?.VideoMediaFrame;
-            var softwareBitmap = videoMediaFrame?.SoftwareBitmap;
             var direct3DSurface = videoMediaFrame?.Direct3DSurface;
+            SoftwareBitmap softwareBitmap;
 
             if (direct3DSurface != null)
             {
-                if (direct3DSurface != null)
-                {
-                    softwareBitmap = SoftwareBitmap.CreateCopyFromSurfaceAsync(direct3DSurface).GetAwaiter().GetResult();
-                }
+                softwareBitmap = SoftwareBitmap.CreateCopyFromSurfaceAsync(direct3DSurface).GetAwaiter().GetResult();
+
                 if (softwareBitmap != null)
                 {
                     //Convert to Bgra8 Premultiplied softwareBitmap.
-                    if (softwareBitmap.BitmapPixelFormat != Windows.Graphics.Imaging.BitmapPixelFormat.Bgra8 ||
-                        softwareBitmap.BitmapAlphaMode != Windows.Graphics.Imaging.BitmapAlphaMode.Premultiplied)
+                    if (softwareBitmap.BitmapPixelFormat != BitmapPixelFormat.Bgra8 ||
+                        softwareBitmap.BitmapAlphaMode != BitmapAlphaMode.Premultiplied)
                     {
                         softwareBitmap = SoftwareBitmap.Convert(softwareBitmap, BitmapPixelFormat.Bgra8, BitmapAlphaMode.Premultiplied);
                     }
@@ -221,7 +217,6 @@ partial class CameraManager
                     direct3DSurface?.Dispose();
                 }
             }
-
             mediaFrameReference?.Dispose();
         }
         _videoFrameCounter++;

@@ -23,27 +23,23 @@ public sealed partial class CameraBarcodeReaderControl : Control, ICameraBarcode
     public CameraBarcodeReaderControl()
 	{
 		this.DefaultStyleKey = typeof(CameraBarcodeReaderControl);
-        CameraManager = new CameraManager(this, CameraProvider, async () =>
+        CameraManager = new CameraManager(this, CameraProvider, () =>
         {
             //await CameraManager.UpdateCaptureResolution(MainGrid.DesiredSize, CancellationToken.None);
         }, true);
-
-        
     }
 
     private void CameraManager_FrameReady(object? sender, CameraFrameBufferEventArgs e)
     {
-        FrameReady?.Invoke(this, e);
+        if (IsDetecting)
+        {
+            FrameReady?.Invoke(this, e);
 
-        //if (IsDetecting)
-        //{
+            var barcodes = BarcodeReader.Decode(e.Data);
 
-        //}
-
-        var barcodes = BarcodeReader.Decode(e.Data);
-
-        if (barcodes?.Any() ?? false)
-            BarcodesDetected?.Invoke(this, new BarcodeDetectionEventArgs(barcodes));
+            if (barcodes?.Any() ?? false)
+                BarcodesDetected?.Invoke(this, new BarcodeDetectionEventArgs(barcodes));
+        }
     }
 
     protected override void OnApplyTemplate()
@@ -116,7 +112,11 @@ public sealed partial class CameraBarcodeReaderControl : Control, ICameraBarcode
     public bool IsTorchOn
     {
         get => (bool)GetValue(IsTorchOnProperty);
-        set => SetValue(IsTorchOnProperty, value);
+        set
+        {
+            SetValue(IsTorchOnProperty, value);
+            //CameraManager?.UpdateTorch(value);
+        }
     }
 
     static readonly DependencyProperty IsCameraBusyProperty =
@@ -166,7 +166,11 @@ public sealed partial class CameraBarcodeReaderControl : Control, ICameraBarcode
     public float ZoomFactor
     {
         get => (float)GetValue(ZoomFactorProperty);
-        set => SetValue(ZoomFactorProperty, value);
+        set
+        {
+            SetValue(ZoomFactorProperty, value);
+            CameraManager?.UpdateZoom(value);
+        }
     }
 
     /// <summary>
@@ -196,7 +200,11 @@ public sealed partial class CameraBarcodeReaderControl : Control, ICameraBarcode
     public BarcodeReaderOptions Options
     {
         get => (BarcodeReaderOptions)GetValue(OptionsProperty);
-        set => SetValue(OptionsProperty, value);
+        set
+        {
+            SetValue(OptionsProperty, value);
+            BarcodeReader.Options = value;
+        }
     }
 
     public static readonly DependencyProperty IsDetectingProperty =
@@ -226,8 +234,7 @@ public sealed partial class CameraBarcodeReaderControl : Control, ICameraBarcode
         {
             SetValue(VidioFrameDividerProperty, value);
             CameraManager.VidioFrameDivider = value;
-        }
-            
+        }   
     }
 
     //static ICameraProvider CameraProvider => Application.Current?.Services.GetRequiredService<ICameraProvider>() ?? throw new CameraException("Unable to retrieve CameraProvider");

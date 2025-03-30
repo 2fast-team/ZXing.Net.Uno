@@ -207,7 +207,6 @@ partial class CameraManager
 		{
             // Frame by frame analyze
             imageAnalyzer = new ImageAnalysis.Builder()
-				.SetDefaultResolution(DefaultTargetResolution)
                 .SetResolutionSelector(resolutionSelector)
                 .SetBackpressureStrategy(ImageAnalysis.StrategyKeepOnlyLatest)
                 .Build();
@@ -282,8 +281,9 @@ partial class CameraManager
 
 	protected virtual void PlatformDisconnect()
 	{
-
-	}
+		PlatformStopCameraPreview();
+        Dispose();
+    }
 
 	protected virtual ValueTask PlatformTakePicture(CancellationToken token)
 	{
