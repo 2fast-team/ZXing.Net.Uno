@@ -1,9 +1,10 @@
-﻿#if __ANDROID__
+﻿#if IOS || MACCATALYST
+using UIKit;
 using Windows.UI;
 
 namespace ZXing.Net.Uno.Barcode
 {
-    public class BarcodeWriter : BarcodeWriter<Android.Graphics.Bitmap>, IBarcodeWriter
+    public class BarcodeWriter : BarcodeWriter<UIImage>, IBarcodeWriter
     {
         BarcodeBitmapRenderer bitmapRenderer;
 
@@ -12,13 +13,13 @@ namespace ZXing.Net.Uno.Barcode
 
         public Color ForegroundColor
         {
-            get => bitmapRenderer.ForegroundColor;
+            get => new UIColor(bitmapRenderer.ForegroundColor);
             set => bitmapRenderer.ForegroundColor = value;
         }
 
         public Color BackgroundColor
         {
-            get => bitmapRenderer.BackgroundColor;
+            get => new UIColor(bitmapRenderer.BackgroundColor);
             set => bitmapRenderer.BackgroundColor = value;
         }
     }

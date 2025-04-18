@@ -3,7 +3,7 @@ using Microsoft.UI.Xaml.Media.Imaging;
 using Windows.UI;
 using ZXing.Common;
 
-namespace ZXing.Net.Uno;
+namespace ZXing.Net.Uno.Barcode;
 
 public class BarcodeWriter : BarcodeWriter<WriteableBitmap>, IBarcodeWriter
 {

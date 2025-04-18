@@ -30,7 +30,7 @@ partial class CameraManager
 	ImageCallBack? imageCallback;
     ImageAnalysis imageAnalyzer;
     ICamera? camera;
-	ICameraControl? cameraControl;
+    AndroidX.Camera.Core.ICameraControl? cameraControl;
 	Preview? cameraPreview;
 	ResolutionSelector? resolutionSelector;
 	ResolutionFilter? resolutionFilter;
@@ -72,7 +72,7 @@ partial class CameraManager
 
 	public void UpdateZoom(float zoomLevel)
 	{
-		cameraControl?.SetZoomRatio(zoomLevel);
+        cameraControl?.SetZoomRatio(zoomLevel);
 	}
 
 	public async ValueTask UpdateCaptureResolution(Size resolution, CancellationToken token)
@@ -321,7 +321,7 @@ partial class CameraManager
 		}
 	}
 
-	sealed class ImageCallBack(ICameraView cameraView) : ImageCapture.OnImageCapturedCallback
+	sealed class ImageCallBack(ICameraControl cameraView) : ImageCapture.OnImageCapturedCallback
 	{
 		public override void OnCaptureSuccess(IImageProxy image)
 		{
