@@ -44,8 +44,8 @@ namespace ZXing.Net.Uno.Controls
             if (MainGrid != null && _barcodeWriter != null)
             {
                 _barcodeWriter.Format = Format.ToZXingList().FirstOrDefault();
-                _barcodeWriter.Options.Width = (int)MainGrid.Width;
-                _barcodeWriter.Options.Height = (int)MainGrid.Height;
+                _barcodeWriter.Options.Width = (int)this.Width;
+                _barcodeWriter.Options.Height = (int)this.Height;
                 _barcodeWriter.Options.Margin = BarcodeMargin;
                 if (Foreground is SolidColorBrush)
                 {
@@ -111,7 +111,6 @@ namespace ZXing.Net.Uno.Controls
 
         private static void BarcodeValueChanged(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs args)
         {
-            
             if (!string.IsNullOrWhiteSpace((string)args.NewValue))
             {
                 (dependencyObject as BarcodeGeneratorControl).CreateBarcode();

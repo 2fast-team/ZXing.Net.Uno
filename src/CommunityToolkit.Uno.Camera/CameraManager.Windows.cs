@@ -179,8 +179,12 @@ partial class CameraManager
 		OnLoaded.Invoke();
 	}
 
-    //Display the captured frame and send it to the registered FrameReady owner.
-    private void ColorFrameReader_FrameArrived(MediaFrameReader sender, MediaFrameArrivedEventArgs args)
+    /// <summary>
+	/// Event handler for the ColorFrameReader.FrameArrived event. This is where the image processing occurs.
+	/// </summary>
+	/// <param name="sender"></param>
+	/// <param name="args"></param>
+    private async void ColorFrameReader_FrameArrived(MediaFrameReader sender, MediaFrameArrivedEventArgs args)
     {
         // analyse only every _vidioFrameDivider value
         if (_videoFrameCounter % VidioFrameDivider == 0)
@@ -192,18 +196,18 @@ partial class CameraManager
 
             if (direct3DSurface != null)
             {
-                softwareBitmap = SoftwareBitmap.CreateCopyFromSurfaceAsync(direct3DSurface).GetAwaiter().GetResult();
+				softwareBitmap = await SoftwareBitmap.CreateCopyFromSurfaceAsync(direct3DSurface);
 
                 if (softwareBitmap != null)
                 {
-                    //Convert to Bgra8 Premultiplied softwareBitmap.
+                    // Convert to Bgra8 Premultiplied softwareBitmap.
                     if (softwareBitmap.BitmapPixelFormat != BitmapPixelFormat.Bgra8 ||
                         softwareBitmap.BitmapAlphaMode != BitmapAlphaMode.Premultiplied)
                     {
                         softwareBitmap = SoftwareBitmap.Convert(softwareBitmap, BitmapPixelFormat.Bgra8, BitmapAlphaMode.Premultiplied);
                     }
 
-                    //Send bitmap to BarCodeReaderView/CameraView
+                    // Send bitmap to BarCodeReaderView/CameraView
                     FrameReady?.Invoke(this, new CameraFrameBufferEventArgs(
                         new ZXing.Net.Uno.Readers.PixelBufferHolder
                         {
@@ -212,7 +216,7 @@ partial class CameraManager
                         }));
 
                     // Swap the processed frame to _backBuffer and dispose of the unused image.
-                    //softwareBitmap = Interlocked.Exchange(ref _backBuffer, softwareBitmap);
+                    // softwareBitmap = Interlocked.Exchange(ref _backBuffer, softwareBitmap);
                     softwareBitmap?.Dispose();
                     direct3DSurface?.Dispose();
                 }
@@ -222,6 +226,9 @@ partial class CameraManager
         _videoFrameCounter++;
     }
 
+    /// <summary>
+    /// Stops the camera preview and disposes of the MediaCapture object.
+    /// </summary>
     protected virtual async void PlatformStopCameraPreview()
 	{
 		if (_mediaElement is null)
