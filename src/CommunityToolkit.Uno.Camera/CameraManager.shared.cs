@@ -10,14 +10,14 @@ namespace CommunityToolkit.Uno.Core;
 /// <remarks>
 /// Creates a new instance of the <see cref="CameraManager"/> class.
 /// </remarks>
-/// <param name="cameraView">The <see cref="ICameraView"/> implementation.</param>
+/// <param name="cameraView">The <see cref="ICameraControl"/> implementation.</param>
 /// <param name="cameraProvider">The <see cref="CameraProvider"/> implementation.</param>
 /// <param name="onLoaded">The <see cref="Action"/> to execute when the camera is loaded.</param>
 /// <param name="analyseImages">The <see cref="bool"/> determines whether the images are analysed for barcode recognition.</param>
 /// <exception cref="NullReferenceException">Thrown when no <see cref="CameraProvider"/> can be resolved.</exception>
 /// <exception cref="InvalidOperationException">Thrown when there are no cameras available.</exception>
 partial class CameraManager(
-    ICameraView cameraView,
+    ICameraControl cameraView,
     ICameraProvider cameraProvider,
     Action onLoaded,
     bool analyseImages = false) : IDisposable

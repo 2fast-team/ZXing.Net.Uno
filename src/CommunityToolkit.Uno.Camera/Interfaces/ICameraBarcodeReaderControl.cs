@@ -7,7 +7,7 @@ using ZXing.Net.Uno;
 
 namespace CommunityToolkit.Uno.Core;
 
-public interface ICameraBarcodeReaderView : ICameraView, ICameraFrameAnalyzer
+public interface ICameraBarcodeReaderControl : ICameraControl, ICameraFrameAnalyzer
 {
     BarcodeReaderOptions Options { get; }
 

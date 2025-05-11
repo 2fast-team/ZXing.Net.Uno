@@ -7,14 +7,7 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="local:CameraBarcodeReaderControl">
-                    <Grid x:Name="MainGrid" >
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="*" />
-                        </Grid.RowDefinitions>
-                    </Grid>
+                    <Grid x:Name="MainGrid" />
                 </ControlTemplate>
             </Setter.Value>
         </Setter>

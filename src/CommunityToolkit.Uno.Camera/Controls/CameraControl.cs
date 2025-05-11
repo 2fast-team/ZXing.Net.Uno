@@ -6,7 +6,7 @@ using Windows.Foundation;
 namespace CommunityToolkit.Uno.Camera.Controls;
 
 [TemplatePart(Name = MainGridName, Type = typeof(Grid))]
-public sealed partial class CameraControl : Control, ICameraView
+public sealed partial class CameraControl : Control, ICameraControl
 {
     private const string MainGridName = "MainGrid";
     Grid MainGrid;
@@ -121,7 +121,7 @@ public sealed partial class CameraControl : Control, ICameraView
             typeof(CameraBarcodeReaderControl),
             new PropertyMetadata(null));
 
-    /// <inheritdoc cref="ICameraView.SelectedCamera"/>
+    /// <inheritdoc cref="ICameraControl.SelectedCamera"/>
     public CameraInfo? SelectedCamera
     {
         get => (CameraInfo?)GetValue(SelectedCameraProperty);
@@ -138,7 +138,7 @@ public sealed partial class CameraControl : Control, ICameraView
             typeof(CameraBarcodeReaderControl),
             new PropertyMetadata(CameraViewDefaults.ZoomFactor));
 
-    /// <inheritdoc cref="ICameraView.ZoomFactor"/>
+    /// <inheritdoc cref="ICameraControl.ZoomFactor"/>
     public float ZoomFactor
     {
         get => (float)GetValue(ZoomFactorProperty);
@@ -155,7 +155,7 @@ public sealed partial class CameraControl : Control, ICameraView
             typeof(CameraBarcodeReaderControl),
             new PropertyMetadata(CameraViewDefaults.ImageCaptureResolution));
 
-    /// <inheritdoc cref="ICameraView.ImageCaptureResolution"/>
+    /// <inheritdoc cref="ICameraControl.ImageCaptureResolution"/>
     public Size ImageCaptureResolution
     {
         get => (Size)GetValue(ImageCaptureResolutionProperty);
@@ -171,7 +171,7 @@ public sealed partial class CameraControl : Control, ICameraView
     TaskCompletionSource IAsynchronousHandler.HandlerCompleteTCS => handlerCompletedTCS;
 
     [EditorBrowsable(EditorBrowsableState.Never)]
-    bool ICameraView.IsBusy
+    bool ICameraControl.IsBusy
     {
         get => IsCameraBusy;
         set => SetValue(IsCameraBusyProperty, value);
@@ -187,7 +187,7 @@ public sealed partial class CameraControl : Control, ICameraView
         throw new NotImplementedException();
     }
 
-    /// <inheritdoc cref="ICameraView.CaptureImage"/>
+    /// <inheritdoc cref="ICameraControl.CaptureImage"/>
     public async ValueTask CaptureImage(CancellationToken token)
     {
         handlerCompletedTCS.TrySetCanceled(token);
@@ -198,7 +198,7 @@ public sealed partial class CameraControl : Control, ICameraView
         await handlerCompletedTCS.Task.WaitAsync(token);
     }
 
-    /// <inheritdoc cref="ICameraView.StartCameraPreview"/>
+    /// <inheritdoc cref="ICameraControl.StartCameraPreview"/>
     public async ValueTask StartCameraPreview(CancellationToken token)
     {
         handlerCompletedTCS.TrySetCanceled(token);
@@ -211,14 +211,14 @@ public sealed partial class CameraControl : Control, ICameraView
         await handlerCompletedTCS.Task.WaitAsync(token);
     }
 
-    /// <inheritdoc cref="ICameraView.StopCameraPreview"/>
+    /// <inheritdoc cref="ICameraControl.StopCameraPreview"/>
     public void StopCameraPreview()
     {
         CameraManager.StopCameraPreview();
         //Handler?.Invoke(nameof(ICameraView.StopCameraPreview));
     }
 
-    /// <inheritdoc cref="ICameraView.GetAvailableCameras"/>
+    /// <inheritdoc cref="ICameraControl.GetAvailableCameras"/>
     public async ValueTask<IReadOnlyList<CameraInfo>> GetAvailableCameras(CancellationToken token)
     {
         if (CameraProvider.AvailableCameras is null)

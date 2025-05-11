@@ -12,26 +12,6 @@ using UIKit;
 
 namespace ZXing.Net.Uno
 {
-	public class BarcodeWriter : BarcodeWriter<UIImage>, IBarcodeWriter
-	{
-		BarcodeBitmapRenderer bitmapRenderer;
-
-		public BarcodeWriter()
-			=> Renderer = (bitmapRenderer = new BarcodeBitmapRenderer());
-
-		public Color ForegroundColor
-		{
-			get => new UIColor(bitmapRenderer.ForegroundColor);
-			set => bitmapRenderer.ForegroundColor = value;
-		}
-
-		public Color BackgroundColor
-		{
-			get => new UIColor(bitmapRenderer.BackgroundColor);
-			set => bitmapRenderer.BackgroundColor = value;
-		}
-	}
-
 	internal class BarcodeBitmapRenderer : IBarcodeRenderer<UIImage>
 	{
 		public CGColor ForegroundColor { get; set; } = new CGColor(1.0f, 1.0f, 1.0f);

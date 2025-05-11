@@ -7,7 +7,7 @@ namespace CommunityToolkit.Uno.Extensions;
 
 static class CameraViewExtensions
 {
-	public static async Task UpdateAvailability(this ICameraView cameraView, CancellationToken token)
+	public static async Task UpdateAvailability(this ICameraControl cameraView, CancellationToken token)
 	{
 		var videoCaptureDevices = await DeviceInformation.FindAllAsync(DeviceClass.VideoCapture).AsTask(token);
 

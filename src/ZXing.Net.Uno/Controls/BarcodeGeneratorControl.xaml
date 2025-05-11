@@ -1,15 +1,19 @@
 ﻿<ResourceDictionary
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:local="using:CommunityToolkit.Uno.Camera.Controls">
+    xmlns:local="using:ZXing.Net.Uno.Controls">
 
-    <Style TargetType="local:CameraControl">
+    <Style TargetType="local:BarcodeGeneratorControl">
+        <Setter Property="Background" Value="White"/>
+        <Setter Property="Foreground" Value="Black"/>
         <Setter Property="Template">
             <Setter.Value>
-                <ControlTemplate TargetType="local:CameraControl">
+                <ControlTemplate TargetType="local:BarcodeGeneratorControl">
                     <Grid x:Name="MainGrid" />
+
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
     </Style>
+
 </ResourceDictionary>

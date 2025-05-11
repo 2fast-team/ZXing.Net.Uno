@@ -7,7 +7,7 @@ namespace CommunityToolkit.Uno.Core;
 /// <summary>
 /// Represents a visual element that provides the ability to show a camera preview and capture images.
 /// </summary>
-public interface ICameraView : IAsynchronousHandler
+public interface ICameraControl : IAsynchronousHandler
 {
 	/// <summary>
 	/// Gets the <see cref="CameraFlashMode"/>.

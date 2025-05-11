@@ -1,17 +1,14 @@
 ﻿using System.ComponentModel;
 using CommunityToolkit.Uno.Core;
 using CommunityToolkit.Uno.Core.Primitives;
-using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Data;
 using Windows.Foundation;
-using ZXing;
 using ZXing.Net.Uno;
 using ZXing.Net.Uno.Readers;
 
 namespace CommunityToolkit.Uno.Camera.Controls;
 
 [TemplatePart(Name = MainGridName, Type = typeof(Grid))]
-public sealed partial class CameraBarcodeReaderControl : Control, ICameraBarcodeReaderView
+public sealed partial class CameraBarcodeReaderControl : Control, ICameraBarcodeReaderControl
 {
     private const string MainGridName = "MainGrid";
     Grid MainGrid;
@@ -70,7 +67,7 @@ public sealed partial class CameraBarcodeReaderControl : Control, ICameraBarcode
         set => SetValue(IsAvailableProperty, value);
     }
 
-    static readonly DependencyProperty IsAvailableProperty =
+    public static readonly DependencyProperty IsAvailableProperty =
         DependencyProperty.Register(
             nameof(IsAvailable),
             typeof(bool),
@@ -119,7 +116,7 @@ public sealed partial class CameraBarcodeReaderControl : Control, ICameraBarcode
         }
     }
 
-    static readonly DependencyProperty IsCameraBusyProperty =
+    public static readonly DependencyProperty IsCameraBusyProperty =
         DependencyProperty.Register(
             nameof(IsCameraBusy),
             typeof(bool),
@@ -145,7 +142,7 @@ public sealed partial class CameraBarcodeReaderControl : Control, ICameraBarcode
             typeof(CameraBarcodeReaderControl),
             new PropertyMetadata(null));
 
-    /// <inheritdoc cref="ICameraView.SelectedCamera"/>
+    /// <inheritdoc cref="ICameraControl.SelectedCamera"/>
     public CameraInfo? SelectedCamera
     {
         get => (CameraInfo?)GetValue(SelectedCameraProperty);
@@ -162,7 +159,7 @@ public sealed partial class CameraBarcodeReaderControl : Control, ICameraBarcode
             typeof(CameraBarcodeReaderControl),
             new PropertyMetadata(CameraViewDefaults.ZoomFactor));
 
-    /// <inheritdoc cref="ICameraView.ZoomFactor"/>
+    /// <inheritdoc cref="ICameraControl.ZoomFactor"/>
     public float ZoomFactor
     {
         get => (float)GetValue(ZoomFactorProperty);
@@ -183,7 +180,7 @@ public sealed partial class CameraBarcodeReaderControl : Control, ICameraBarcode
             typeof(CameraBarcodeReaderControl),
             new PropertyMetadata(CameraViewDefaults.ImageCaptureResolution));
 
-    /// <inheritdoc cref="ICameraView.ImageCaptureResolution"/>
+    /// <inheritdoc cref="ICameraControl.ImageCaptureResolution"/>
     public Size ImageCaptureResolution
     {
         get => (Size)GetValue(ImageCaptureResolutionProperty);
@@ -249,13 +246,13 @@ public sealed partial class CameraBarcodeReaderControl : Control, ICameraBarcode
     TaskCompletionSource IAsynchronousHandler.HandlerCompleteTCS => handlerCompletedTCS;
 
     [EditorBrowsable(EditorBrowsableState.Never)]
-    bool ICameraView.IsBusy
+    bool ICameraControl.IsBusy
     {
         get => IsCameraBusy;
         set => SetValue(IsCameraBusyProperty, value);
     }
 
-    void ICameraBarcodeReaderView.BarcodesDetected(BarcodeDetectionEventArgs e) => BarcodesDetected?.Invoke(this, e);
+    void ICameraBarcodeReaderControl.BarcodesDetected(BarcodeDetectionEventArgs e) => BarcodesDetected?.Invoke(this, e);
     void ICameraFrameAnalyzer.FrameReady(CameraFrameBufferEventArgs e) => FrameReady?.Invoke(this, e);
 
     public void OnMediaCaptured(Stream imageData)
@@ -268,7 +265,7 @@ public sealed partial class CameraBarcodeReaderControl : Control, ICameraBarcode
         throw new NotImplementedException();
     }
 
-    /// <inheritdoc cref="ICameraView.CaptureImage"/>
+    /// <inheritdoc cref="ICameraControl.CaptureImage"/>
     public async ValueTask CaptureImage(CancellationToken token)
     {
         handlerCompletedTCS.TrySetCanceled(token);
@@ -279,7 +276,7 @@ public sealed partial class CameraBarcodeReaderControl : Control, ICameraBarcode
         await handlerCompletedTCS.Task.WaitAsync(token);
     }
 
-    /// <inheritdoc cref="ICameraView.StartCameraPreview"/>
+    /// <inheritdoc cref="ICameraControl.StartCameraPreview"/>
     public async ValueTask StartCameraPreview(CancellationToken token)
     {
         handlerCompletedTCS.TrySetCanceled(token);
@@ -292,14 +289,14 @@ public sealed partial class CameraBarcodeReaderControl : Control, ICameraBarcode
         await handlerCompletedTCS.Task.WaitAsync(token);
     }
 
-    /// <inheritdoc cref="ICameraView.StopCameraPreview"/>
+    /// <inheritdoc cref="ICameraControl.StopCameraPreview"/>
     public void StopCameraPreview()
     {
         CameraManager.StopCameraPreview();
         //Handler?.Invoke(nameof(ICameraView.StopCameraPreview));
     }
 
-    /// <inheritdoc cref="ICameraView.GetAvailableCameras"/>
+    /// <inheritdoc cref="ICameraControl.GetAvailableCameras"/>
     public async ValueTask<IReadOnlyList<CameraInfo>> GetAvailableCameras(CancellationToken token)
     {
         if (CameraProvider.AvailableCameras is null)
