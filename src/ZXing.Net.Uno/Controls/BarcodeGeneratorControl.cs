@@ -7,7 +7,6 @@ namespace ZXing.Net.Uno.Controls
     [TemplatePart(Name = MainGridName, Type = typeof(Grid))]
     public sealed partial class BarcodeGeneratorControl : Control, IBarcodeGeneratorControl
     {
-        Size _desiredSize;
         ZXing.Net.Uno.Barcode.BarcodeWriter _barcodeWriter;
         private const string MainGridName = "MainGrid";
         Grid MainGrid;
