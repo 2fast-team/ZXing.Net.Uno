@@ -1,9 +1,9 @@
 ﻿<Project Sdk="Uno.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>net9.0-ios;net9.0-maccatalyst;net9.0-android;net9.0-windows10.0.26100</TargetFrameworks>
+      <TargetFrameworks>net9.0-android;net9.0-ios;net9.0-windows10.0.26100.0;</TargetFrameworks>
 
-    <OutputType>Exe</OutputType>
-    <UnoSingleProject>true</UnoSingleProject>
+      <OutputType>Exe</OutputType>
+      <UnoSingleProject>true</UnoSingleProject>
 
     <!-- Display name -->
     <ApplicationTitle>ZXing.Net.Uno.Sample</ApplicationTitle>
@@ -45,12 +45,38 @@
     </UnoFeatures>
     <PackageCertificateThumbprint>D17FB9F254A915E499415F614115D6D86A448B38</PackageCertificateThumbprint>
     <AppxPackageSigningEnabled>True</AppxPackageSigningEnabled>
-    <Platforms>AnyCPU;x64;ARM64</Platforms>
     <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">29.0</SupportedOSPlatformVersion>
+  </PropertyGroup>
+  <PropertyGroup>
+    <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net9.0-windows10.0.26100.0</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\CommunityToolkit.Uno.Camera\CommunityToolkit.Uno.Camera.csproj" />
   </ItemGroup>
+
+    <ItemGroup Condition="'$(TargetFramework)' == 'net9.0-android'">
+        <PackageReference Include="Xamarin.AndroidX.Activity">
+            <Version>1.10.1.1</Version>
+        </PackageReference>
+        <PackageReference Include="Xamarin.AndroidX.Activity.Ktx">
+            <Version>1.10.1.1</Version>
+        </PackageReference>
+        <PackageReference Include="Xamarin.AndroidX.Collection.Jvm">
+            <Version>1.5.0.1</Version>
+        </PackageReference>
+        <PackageReference Include="Xamarin.AndroidX.Collection.Ktx">
+            <Version>1.5.0.1</Version>
+        </PackageReference>
+        <PackageReference Include="Xamarin.AndroidX.Fragment.Ktx">
+            <Version>1.8.6.1</Version>
+        </PackageReference>
+        <PackageReference Include="Xamarin.AndroidX.Lifecycle.LiveData">
+            <Version>2.8.7.3</Version>
+        </PackageReference>
+        <PackageReference Include="Xamarin.AndroidX.AppCompat">
+            <Version>1.7.0.6</Version>
+        </PackageReference>
+    </ItemGroup>
 
 </Project>
