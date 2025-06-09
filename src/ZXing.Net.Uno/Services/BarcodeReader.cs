@@ -57,4 +57,26 @@ public class BarcodeReader : Readers.IBarcodeReader
 
         return null;
 	}
+
+#if WINDOWS
+	public BarcodeResult[] Decode(SoftwareBitmapLuminanceSource ls)
+    {
+        if (Options.Multiple)
+            return zxingReader.DecodeMultiple(ls)?.ToBarcodeResults();
+
+        Result result;
+        try
+        {
+            result = zxingReader.Decode(ls);
+            if (result != null)
+                return new[] { result.ToBarcodeResult() };
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+
+        return null;
+    }
+#endif
 }
