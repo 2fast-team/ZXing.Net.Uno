@@ -1,6 +1,4 @@
-﻿using CommunityToolkit.Uno.Core.Primitives;
-using Windows.Foundation;
-using ZXing.Net.Uno;
+﻿using ZXing.Net.Uno;
 
 namespace CommunityToolkit.Uno.Core;
 

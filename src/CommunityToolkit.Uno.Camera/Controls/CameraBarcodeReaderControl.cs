@@ -1,6 +1,6 @@
-﻿using System.ComponentModel;
-using CommunityToolkit.Uno.Core;
+﻿using CommunityToolkit.Uno.Core;
 using CommunityToolkit.Uno.Core.Primitives;
+using System.ComponentModel;
 using Windows.Foundation;
 using ZXing.Net.Uno;
 using ZXing.Net.Uno.Readers;
@@ -11,6 +11,7 @@ namespace CommunityToolkit.Uno.Camera.Controls;
 public sealed partial class CameraBarcodeReaderControl : Control, ICameraBarcodeReaderControl
 {
     private const string MainGridName = "MainGrid";
+    private bool _isDecting = true;
     Grid MainGrid;
     CameraManager CameraManager { get; }
     ZXing.Net.Uno.Readers.IBarcodeReader barcodeReader;
@@ -28,7 +29,7 @@ public sealed partial class CameraBarcodeReaderControl : Control, ICameraBarcode
 
     private void CameraManager_FrameReady(object? sender, CameraFrameBufferEventArgs e)
     {
-        if (IsDetecting)
+        if (_isDecting)
         {
             FrameReady?.Invoke(this, e);
 
@@ -55,6 +56,7 @@ public sealed partial class CameraBarcodeReaderControl : Control, ICameraBarcode
         await CameraManager.UpdateCaptureResolution(MainGrid.DesiredSize, CancellationToken.None);
         await CameraManager.ConnectCamera(CancellationToken.None);
 
+        CameraManager.FrameReady -= CameraManager_FrameReady;
         CameraManager.FrameReady += CameraManager_FrameReady;
     }
 
@@ -209,7 +211,12 @@ public sealed partial class CameraBarcodeReaderControl : Control, ICameraBarcode
             nameof(IsDetecting), 
             typeof(bool), 
             typeof(CameraBarcodeReaderControl),
-            new PropertyMetadata(true));
+            new PropertyMetadata(true, OnIsDetectingChanged));
+
+    private static void OnIsDetectingChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        ((CameraBarcodeReaderControl)d)._isDecting = (bool)e.NewValue;
+    }
 
     public bool IsDetecting
     {

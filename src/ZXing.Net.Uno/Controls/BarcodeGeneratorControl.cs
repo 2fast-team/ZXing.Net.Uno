@@ -1,6 +1,4 @@
 ﻿using Microsoft.UI;
-using Windows.Foundation;
-using Windows.UI;
 
 namespace ZXing.Net.Uno.Controls
 {
