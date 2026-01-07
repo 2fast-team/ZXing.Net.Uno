@@ -400,7 +400,47 @@ partial class CameraManager
 		{
 			if (PreviewLayer.Connection is not null)
 			{
-				PreviewLayer.Connection.VideoOrientation = videoOrientation;
+#if IOS || MACCATALYST
+#if (IOS && !MACCATALYST)
+				// iOS 17+ uses VideoRotationAngle, older uses VideoOrientation
+				if (OperatingSystem.IsIOSVersionAtLeast(17, 0))
+				{
+					PreviewLayer.Connection.VideoRotationAngle = videoOrientation switch
+					{
+						AVCaptureVideoOrientation.Portrait => 0f,
+						AVCaptureVideoOrientation.LandscapeRight => 90f,
+						AVCaptureVideoOrientation.PortraitUpsideDown => 180f,
+						AVCaptureVideoOrientation.LandscapeLeft => 270f,
+						_ => 0f
+					};
+				}
+				else
+				{
+#pragma warning disable CA1422 // Suppress obsolete warning for older iOS
+					PreviewLayer.Connection.VideoOrientation = videoOrientation;
+#pragma warning restore CA1422
+				}
+#else
+				// MacCatalyst 17+ uses VideoRotationAngle, older uses VideoOrientation
+				if (OperatingSystem.IsMacCatalystVersionAtLeast(17, 0))
+				{
+					PreviewLayer.Connection.VideoRotationAngle = videoOrientation switch
+					{
+						AVCaptureVideoOrientation.Portrait => 0f,
+						AVCaptureVideoOrientation.LandscapeRight => 90f,
+						AVCaptureVideoOrientation.PortraitUpsideDown => 180f,
+						AVCaptureVideoOrientation.LandscapeLeft => 270f,
+						_ => 0f
+					};
+				}
+				else
+				{
+#pragma warning disable CA1422 // Suppress obsolete warning for older MacCatalyst
+					PreviewLayer.Connection.VideoOrientation = videoOrientation;
+#pragma warning restore CA1422
+				}
+#endif
+#endif
 			}
 		}
 	}
