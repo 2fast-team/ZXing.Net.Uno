@@ -101,8 +101,8 @@ partial class CameraManager
 
 		resolutionSelector = new ResolutionSelector.Builder()
 		.SetAllowedResolutionMode(ResolutionSelector.PreferHigherResolutionOverCaptureRate)
-		.SetResolutionFilter(resolutionFilter)
-		.Build();
+			.SetResolutionFilter(resolutionFilter)
+			.Build();
 
 		if (IsInitialized)
 		{
@@ -194,7 +194,10 @@ partial class CameraManager
 		cameraPreview?.Dispose();
 		imageCapture?.Dispose();
 
-		cameraPreview = new Preview.Builder().SetResolutionSelector(resolutionSelector).Build();
+		cameraPreview = new Preview
+			.Builder()
+			.SetResolutionSelector(resolutionSelector)
+			.Build();
 		cameraPreview.SetSurfaceProvider(cameraExecutor, previewView?.SurfaceProvider);
 
 		imageCapture = new ImageCapture.Builder()
@@ -217,7 +220,7 @@ partial class CameraManager
 				if (_videoFrameCounter % VidioFrameDivider == 0)
 				{
 					FrameReady?.Invoke(this, new CameraFrameBufferEventArgs(
-					new ZXing.Net.Uno.Readers.PixelBufferHolder { Data = buffer, Size = new Size(size.Width, size.Height) }));
+					new ZXing.Net.Uno.Readers.PixelBufferHolder { Data = buffer, Size = size }));
 				}
 				_videoFrameCounter++;
             }));
