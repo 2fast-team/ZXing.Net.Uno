@@ -5,7 +5,7 @@ using Windows.Foundation;
 namespace CommunityToolkit.Uno.Core;
 
 /// <summary>Default Values for <see cref="ICameraControl"/>"/></summary>
-[SupportedOSPlatform("windows10.0.17763.0")]
+[SupportedOSPlatform("windows10.0.18362.0")]
 [SupportedOSPlatform("android21.0")]
 [SupportedOSPlatform("ios")]
 [SupportedOSPlatform("maccatalyst")]

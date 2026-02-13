@@ -12,172 +12,143 @@ using ZXing.Net.Uno;
 
 namespace CommunityToolkit.Uno.Core;
 
-[SupportedOSPlatform("windows10.0.17763.0")]
+[SupportedOSPlatform("windows10.0.18362.0")]
 partial class CameraManager
 {
-	MediaPlayerElement? _mediaElement;
-	MediaCapture? _mediaCapture;
-	MediaFrameSource? _frameSource;
+    MediaPlayerElement? _mediaElement;
+    MediaCapture? _mediaCapture;
+    MediaFrameSource? _frameSource;
+    LowLagMediaRecording? _mediaRecording;
     MediaFrameReader? _mediaFrameReader;
-    SoftwareBitmap _backBuffer;
+    Stream? _videoCaptureStream;
 
     public MediaPlayerElement CreatePlatformView()
-	{
-		_mediaElement = new MediaPlayerElement();
-		return _mediaElement;
-	}
-
-	public void Dispose()
-	{
-		Dispose(true);
-		GC.SuppressFinalize(this);
-	}
-
-	public void UpdateFlashMode(CameraFlashMode flashMode)
-	{
-		if (!IsInitialized || (_mediaCapture?.VideoDeviceController.FlashControl.Supported is false))
-		{
-			return;
-		}
-
-		if (_mediaCapture is null)
-		{
-			return;
-		}
-
-		var (updatedFlashControlEnabled, updatedFlashControlAuto) = flashMode switch
-		{
-			CameraFlashMode.Off => (false, (bool?)null),
-			CameraFlashMode.On => (true, false),
-			CameraFlashMode.Auto => (true, true),
-			_ => throw new NotSupportedException($"{flashMode} is not yet supported")
-		};
-
-		_mediaCapture.VideoDeviceController.FlashControl.Enabled = updatedFlashControlEnabled;
-
-		if (updatedFlashControlAuto.HasValue)
-		{
-			_mediaCapture.VideoDeviceController.FlashControl.Auto = updatedFlashControlAuto.Value;
-		}
-
-	}
-
-	public void UpdateZoom(float zoomLevel)
-	{
-		if (!IsInitialized || _mediaCapture is null || !_mediaCapture.VideoDeviceController.ZoomControl.Supported)
-		{
-			return;
-		}
-
-		var step = _mediaCapture.VideoDeviceController.ZoomControl.Step;
-
-		if (zoomLevel % step != 0)
-		{
-			zoomLevel = (float)Math.Ceiling(zoomLevel / step) * step;
-		}
-
-		_mediaCapture.VideoDeviceController.ZoomControl.Value = zoomLevel;
-	}
-
-	public async ValueTask UpdateCaptureResolution(Size resolution, CancellationToken token)
-	{
-		await PlatformUpdateResolution(resolution, token);
-	}
-
-	protected virtual void PlatformDisconnect()
-	{
-		PlatformStopCameraPreview();
-		Dispose();
+    {
+        _mediaElement = new MediaPlayerElement();
+        return _mediaElement;
     }
 
-	protected virtual async ValueTask PlatformTakePicture(CancellationToken token)
-	{
-		if (_mediaCapture is null)
-		{
-			return;
-		}
+    public void Dispose()
+    {
+        PlatformStopCameraPreview();
+        _mediaCapture?.Dispose();
+    }
 
-		token.ThrowIfCancellationRequested();
+    public partial void UpdateFlashMode(CameraFlashMode flashMode)
+    {
+        if (!IsInitialized || (_mediaCapture?.VideoDeviceController.FlashControl.Supported is false))
+        {
+            return;
+        }
 
-		MemoryStream memoryStream = new();
+        if (_mediaCapture is null)
+        {
+            return;
+        }
 
-		try
-		{
-			await _mediaCapture.CapturePhotoToStreamAsync(ImageEncodingProperties.CreateJpeg(), memoryStream.AsRandomAccessStream());
+        var (updatedFlashControlEnabled, updatedFlashControlAuto) = flashMode switch
+        {
+            CameraFlashMode.Off => (false, (bool?)null),
+            CameraFlashMode.On => (true, false),
+            CameraFlashMode.Auto => (true, true),
+            _ => throw new NotSupportedException($"{flashMode} is not yet supported")
+        };
 
-			memoryStream.Position = 0;
+        _mediaCapture.VideoDeviceController.FlashControl.Enabled = updatedFlashControlEnabled;
 
-			cameraView.OnMediaCaptured(memoryStream);
-		}
-		catch (Exception ex)
-		{
-			cameraView.OnMediaCapturedFailed(ex.Message);
-			throw;
-		}
-	}
+        if (updatedFlashControlAuto.HasValue)
+        {
+            _mediaCapture.VideoDeviceController.FlashControl.Auto = updatedFlashControlAuto.Value;
+        }
 
-	protected virtual void Dispose(bool disposing)
-	{
-		PlatformStopCameraPreview();
-		if (disposing)
-		{
-			_mediaCapture?.Dispose();
-		}
-	}
+    }
 
-	protected virtual async Task PlatformConnectCamera(CancellationToken token)
-	{
-		if (cameraProvider.AvailableCameras is null)
-		{
-			await cameraProvider.RefreshAvailableCameras(token);
+    public partial void UpdateZoom(float zoomLevel)
+    {
+        if (!IsInitialized || _mediaCapture is null || !_mediaCapture.VideoDeviceController.ZoomControl.Supported)
+        {
+            return;
+        }
 
-			if (cameraProvider.AvailableCameras is null)
-			{
-				throw new CameraException("Unable to refresh cameras");
-			}
-		}
+        var step = _mediaCapture.VideoDeviceController.ZoomControl.Step;
 
-		await StartCameraPreview(token);
-	}
+        if (zoomLevel % step != 0)
+        {
+            zoomLevel = (float)Math.Ceiling(zoomLevel / step) * step;
+        }
 
-	protected virtual async Task PlatformStartCameraPreview(CancellationToken token)
-	{
-		if (_mediaElement is null)
-		{
-			return;
-		}
+        _mediaCapture.VideoDeviceController.ZoomControl.Value = zoomLevel;
+    }
 
-		_mediaCapture = new MediaCapture();
+    public async partial ValueTask UpdateCaptureResolution(Size resolution, CancellationToken token)
+    {
+        await PlatformUpdateResolution(resolution, token);
+    }
 
-		if (cameraView.SelectedCamera is null)
-		{
-			await cameraProvider.RefreshAvailableCameras(token);
-			cameraView.SelectedCamera = cameraProvider.AvailableCameras?.FirstOrDefault() ?? throw new CameraException("No camera available on device");
-		}
+    private partial void PlatformDisconnect()
+    {
+    }
 
-		await _mediaCapture.InitializeCameraForCameraView(cameraView.SelectedCamera.DeviceId, token);
+    private async partial ValueTask PlatformTakePicture(CancellationToken token)
+    {
+        if (_mediaCapture is null)
+        {
+            return;
+        }
 
-		_frameSource = _mediaCapture.FrameSources.FirstOrDefault(source => source.Value.Info.MediaStreamType == MediaStreamType.VideoRecord && source.Value.Info.SourceKind == MediaFrameSourceKind.Color).Value;
+        token.ThrowIfCancellationRequested();
 
-		if (_frameSource is not null)
-		{
-			_mediaElement.AutoPlay = true;
-			_mediaElement.Source = MediaSource.CreateFromMediaFrameSource(_frameSource);
-		}
+        MemoryStream memoryStream = new();
 
-		IsInitialized = true;
+        try
+        {
+            await _mediaCapture.CapturePhotoToStreamAsync(ImageEncodingProperties.CreateJpeg(), memoryStream.AsRandomAccessStream());
 
-		await PlatformUpdateResolution(cameraView.ImageCaptureResolution, token);
+            memoryStream.Position = 0;
 
-		if(AnalyseImages && _frameSource is not null)
-		{
+            cameraView.OnMediaCaptured(memoryStream);
+        }
+        catch (Exception ex)
+        {
+            cameraView.OnMediaCapturedFailed(ex.Message);
+            throw;
+        }
+    }
+
+    private async partial Task PlatformConnectCamera(CancellationToken token)
+    {
+        await StartCameraPreview(token);
+    }
+
+    private async partial Task PlatformStartCameraPreview(CancellationToken token)
+    {
+        if (_mediaElement is null)
+        {
+            return;
+        }
+
+        cameraView.SelectedCamera ??= cameraProvider.AvailableCameras?.FirstOrDefault() ?? throw new CameraException("No camera available on device");
+
+        _mediaCapture = new MediaCapture();
+
+        await _mediaCapture.InitializeCameraForCameraView(cameraView.SelectedCamera.DeviceId, token);
+
+        _frameSource = _mediaCapture.FrameSources.FirstOrDefault(source => source.Value.Info.MediaStreamType == MediaStreamType.VideoRecord && source.Value.Info.SourceKind == MediaFrameSourceKind.Color).Value;
+
+
+        if (AnalyseImages && _frameSource is not null)
+        {
             _mediaFrameReader = await _mediaCapture.CreateFrameReaderAsync(_frameSource, MediaEncodingSubtypes.Bgra8);
             _mediaFrameReader.FrameArrived += ColorFrameReader_FrameArrived;
             await _mediaFrameReader.StartAsync();
         }
 
-		OnLoaded.Invoke();
-	}
+        IsInitialized = true;
+
+        await PlatformUpdateResolution(cameraView.ImageCaptureResolution, token);
+
+        OnLoaded.Invoke();
+    }
 
     /// <summary>
 	/// Event handler for the ColorFrameReader.FrameArrived event. This is where the image processing occurs.
@@ -188,7 +159,7 @@ partial class CameraManager
     {
         // analyse only every _vidioFrameDivider value
         if (_videoFrameCounter % VidioFrameDivider == 0)
-		{
+        {
             var mediaFrameReference = sender.TryAcquireLatestFrame();
             var videoMediaFrame = mediaFrameReference?.VideoMediaFrame;
             var direct3DSurface = videoMediaFrame?.Direct3DSurface;
@@ -196,7 +167,7 @@ partial class CameraManager
 
             if (direct3DSurface != null)
             {
-				softwareBitmap = await SoftwareBitmap.CreateCopyFromSurfaceAsync(direct3DSurface);
+                softwareBitmap = await SoftwareBitmap.CreateCopyFromSurfaceAsync(direct3DSurface);
 
                 if (softwareBitmap != null)
                 {
@@ -226,54 +197,86 @@ partial class CameraManager
         _videoFrameCounter++;
     }
 
-    /// <summary>
-    /// Stops the camera preview and disposes of the MediaCapture object.
-    /// </summary>
-    protected virtual async void PlatformStopCameraPreview()
-	{
-		if (_mediaElement is null)
-		{
-			return;
-		}
-
-		_mediaElement.Source = null;
-		_mediaCapture?.Dispose();
-
-		_mediaCapture = null;
-
-        if (_mediaFrameReader != null)
+    private partial void PlatformStopCameraPreview()
+    {
+        if (_mediaElement is null)
         {
-            await _mediaFrameReader.StopAsync();
-            _mediaFrameReader.FrameArrived -= ColorFrameReader_FrameArrived;
-            _mediaFrameReader.Dispose();
-            _mediaFrameReader = null;
+            return;
         }
+
+        _mediaElement.Source = null;
+        _mediaCapture?.Dispose();
+
+        _mediaCapture = null;
         IsInitialized = false;
-	}
+    }
 
-	protected async Task PlatformUpdateResolution(Size resolution, CancellationToken token)
-	{
-		if (!IsInitialized || _mediaCapture is null)
-		{
-			return;
-		}
+    async Task PlatformUpdateResolution(Size resolution, CancellationToken token)
+    {
+        if (!IsInitialized || _mediaCapture is null)
+        {
+            return;
+        }
 
-		if (cameraView.SelectedCamera is null)
-		{
-			await cameraProvider.RefreshAvailableCameras(token);
-			cameraView.SelectedCamera = cameraProvider.AvailableCameras?.FirstOrDefault() ?? throw new CameraException("No camera available on device");
-		}
+        if (cameraView.SelectedCamera is null)
+        {
+            throw new CameraException($"Unable to update Capture Resolution because {nameof(ICameraControl)}.{nameof(ICameraControl.SelectedCamera)} is null.");
+        }
 
-		var filteredPropertiesList = cameraView.SelectedCamera.ImageEncodingProperties.Where(p => p.Width <= resolution.Width && p.Height <= resolution.Height).ToList();
+        var filteredPropertiesList = cameraView.SelectedCamera.ImageEncodingProperties.Where(p => p.Width <= resolution.Width && p.Height <= resolution.Height).ToList();
 
-		filteredPropertiesList = filteredPropertiesList.Count is not 0
-			? filteredPropertiesList
-			: [.. cameraView.SelectedCamera.ImageEncodingProperties.OrderByDescending(p => p.Width * p.Height)];
+        if (filteredPropertiesList.Count is 0)
+        {
+            filteredPropertiesList = [.. cameraView.SelectedCamera.ImageEncodingProperties.OrderByDescending(p => p.Width * p.Height)];
+        }
 
-		if (filteredPropertiesList.Count is not 0)
-		{
-			await _mediaCapture.VideoDeviceController.SetMediaStreamPropertiesAsync(MediaStreamType.Photo, filteredPropertiesList.First()).AsTask(token);
-		}
-	}
+        if (filteredPropertiesList.Count is not 0)
+        {
+            await _mediaCapture.VideoDeviceController.SetMediaStreamPropertiesAsync(MediaStreamType.Photo, filteredPropertiesList.First()).AsTask(token);
+        }
+    }
+
+    private async partial Task PlatformStartVideoRecording(Stream stream, CancellationToken token)
+    {
+        if (!IsInitialized || _mediaCapture is null || _mediaElement is null)
+        {
+            return;
+        }
+
+        _videoCaptureStream = stream;
+
+        var profile = MediaEncodingProfile.CreateMp4(VideoEncodingQuality.Auto);
+        _mediaRecording = await _mediaCapture.PrepareLowLagRecordToStreamAsync(profile, stream.AsRandomAccessStream());
+
+        _frameSource = _mediaCapture.FrameSources
+            .FirstOrDefault(static source => source.Value.Info.MediaStreamType is MediaStreamType.VideoRecord && source.Value.Info.SourceKind is MediaFrameSourceKind.Color)
+            .Value;
+
+        if (_frameSource is not null)
+        {
+            var frameFormat = _frameSource.SupportedFormats
+                    .OrderByDescending(f => f.VideoFormat.Width * f.VideoFormat.Height)
+                    .FirstOrDefault();
+
+            if (frameFormat is not null)
+            {
+                await _frameSource.SetFormatAsync(frameFormat);
+                _mediaElement.AutoPlay = true;
+                _mediaElement.Source = MediaSource.CreateFromMediaFrameSource(_frameSource);
+                await _mediaRecording.StartAsync();
+            }
+        }
+    }
+
+    private async partial Task<Stream> PlatformStopVideoRecording(CancellationToken token)
+    {
+        if (!IsInitialized || _mediaElement is null || _mediaRecording is null || _videoCaptureStream is null)
+        {
+            return Stream.Null;
+        }
+
+        await _mediaRecording.StopAsync();
+        return _videoCaptureStream;
+    }
 }
 #endif

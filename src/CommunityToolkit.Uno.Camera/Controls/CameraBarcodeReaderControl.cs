@@ -11,7 +11,7 @@ namespace CommunityToolkit.Uno.Camera.Controls;
 public sealed partial class CameraBarcodeReaderControl : Control, ICameraBarcodeReaderControl
 {
     private const string MainGridName = "MainGrid";
-    private bool _isDecting = true;
+    private bool _isDetecting = true;
     Grid MainGrid;
     CameraManager CameraManager { get; }
     ZXing.Net.Uno.Readers.IBarcodeReader barcodeReader;
@@ -29,7 +29,7 @@ public sealed partial class CameraBarcodeReaderControl : Control, ICameraBarcode
 
     private void CameraManager_FrameReady(object? sender, CameraFrameBufferEventArgs e)
     {
-        if (_isDecting)
+        if (_isDetecting)
         {
             FrameReady?.Invoke(this, e);
 
@@ -215,7 +215,7 @@ public sealed partial class CameraBarcodeReaderControl : Control, ICameraBarcode
 
     private static void OnIsDetectingChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        ((CameraBarcodeReaderControl)d)._isDecting = (bool)e.NewValue;
+        ((CameraBarcodeReaderControl)d)._isDetecting = (bool)e.NewValue;
     }
 
     public bool IsDetecting
@@ -319,24 +319,28 @@ public sealed partial class CameraBarcodeReaderControl : Control, ICameraBarcode
         return CameraProvider.AvailableCameras;
     }
 
-    ///// <summary>
-    ///// Event that is raised when the camera capture fails.
-    ///// </summary>
-    //public event EventHandler<MediaCaptureFailedEventArgs> MediaCaptureFailed
-    //{
-    //    add => weakEventManager.AddEventHandler(value);
-    //    remove => weakEventManager.RemoveEventHandler(value);
-    //}
+    Task<Stream> ICameraControl.CaptureImage(CancellationToken token)
+    {
+        throw new NotImplementedException();
+    }
 
-    ///// <summary>
-    ///// Event that is raised when the camera captures an image.
-    ///// </summary>
-    ///// <remarks>
-    ///// The <see cref="MediaCapturedEventArgs"/> contains the captured image data.
-    ///// </remarks>
-    //public event EventHandler<MediaCapturedEventArgs> MediaCaptured
-    //{
-    //    add => weakEventManager.AddEventHandler(value);
-    //    remove => weakEventManager.RemoveEventHandler(value);
-    //}
+    Task ICameraControl.StartCameraPreview(CancellationToken token)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task StartVideoRecording(CancellationToken token = default)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task StartVideoRecording(Stream stream, CancellationToken token = default)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<Stream> StopVideoRecording(CancellationToken token = default)
+    {
+        throw new NotImplementedException();
+    }
 }

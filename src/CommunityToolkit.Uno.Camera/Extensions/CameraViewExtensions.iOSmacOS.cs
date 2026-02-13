@@ -2,6 +2,7 @@
 using AVFoundation;
 using CommunityToolkit.Uno.Core;
 using CommunityToolkit.Uno.Core.Primitives;
+using CoreMedia;
 
 namespace CommunityToolkit.Uno.Extensions;
 
@@ -32,5 +33,24 @@ static class CameraViewExtensions
 	{
 		cameraView.IsAvailable = AVCaptureDevice.GetDefaultDevice(AVMediaTypes.Video) is not null;
 	}
+
+    extension(AVCaptureDeviceFormat avCaptureDeviceFormat)
+    {
+        /// <summary>
+        /// Gets the total resolution area in pixels (width × height) of the <see cref="AVCaptureDeviceFormat"/>.
+        /// </summary>
+        /// <value>
+        /// The total number of pixels, calculated as width multiplied by height.
+        /// </value>
+        public int ResolutionArea
+        {
+            get
+            {
+                var dimensions = ((CMVideoFormatDescription)avCaptureDeviceFormat.FormatDescription).Dimensions;
+                return dimensions.Width * dimensions.Height;
+            }
+        }
+
+    }
 }
 #endif
