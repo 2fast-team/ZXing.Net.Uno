@@ -1,4 +1,6 @@
-﻿using ZXing.Net.Uno;
+﻿using CommunityToolkit.Uno.Core.Primitives;
+using Windows.Foundation;
+using ZXing.Net.Uno;
 
 namespace CommunityToolkit.Uno.Core;
 
@@ -8,21 +10,21 @@ namespace CommunityToolkit.Uno.Core;
 /// <remarks>
 /// Creates a new instance of the <see cref="CameraManager"/> class.
 /// </remarks>
-/// <param name="cameraView">The <see cref="ICameraControl"/> implementation.</param>
-/// <param name="cameraProvider">The <see cref="CameraProvider"/> implementation.</param>
+/// <param name="_cameraView">The <see cref="ICameraControl"/> implementation.</param>
+/// <param name="_cameraProvider">The <see cref="CameraProvider"/> implementation.</param>
 /// <param name="onLoaded">The <see cref="Action"/> to execute when the camera is loaded.</param>
 /// <param name="analyseImages">The <see cref="bool"/> determines whether the images are analysed for barcode recognition.</param>
 /// <exception cref="NullReferenceException">Thrown when no <see cref="CameraProvider"/> can be resolved.</exception>
 /// <exception cref="InvalidOperationException">Thrown when there are no cameras available.</exception>
-partial class CameraManager(
-    ICameraControl cameraView,
-    ICameraProvider cameraProvider,
+sealed partial class CameraManager(
+    ICameraControl _cameraView,
+    ICameraProvider _cameraProvider,
     Action onLoaded,
     bool analyseImages = false) : IDisposable
 {
-	internal Action OnLoaded { get; } = onLoaded;
+    internal Action OnLoaded { get; } = onLoaded;
 
-	internal bool IsInitialized { get; private set; }
+    internal bool IsInitialized { get; private set; }
 
     internal bool AnalyseImages { get; } = analyseImages;
 
@@ -35,41 +37,56 @@ partial class CameraManager(
     /// Connects to the camera.
     /// </summary>
     /// <returns>A <see cref="ValueTask"/> that can be awaited.</returns>
-    public Task ConnectCamera(CancellationToken token) => PlatformConnectCamera(token);
+    public async Task ConnectCamera(CancellationToken token)
+    {
+        if (_cameraProvider.AvailableCameras is null)
+        {
+            await _cameraProvider.RefreshAvailableCameras(token);
+        }
+        _cameraView.SelectedCamera ??= _cameraProvider.AvailableCameras?.FirstOrDefault() ?? throw new CameraException("No camera available on device");
+        await PlatformConnectCamera(token);
+    }
 
     /// <summary>
     /// Disconnects from the camera.
     /// </summary>
-    public void Disconnect()
-    {
-        PlatformDisconnect();
-    }
+    public void Disconnect() => PlatformDisconnect();
 
     /// <summary>
     /// Takes a picture using the camera.
     /// </summary>
     /// <returns>A <see cref="ValueTask"/> that can be awaited.</returns>
-    public ValueTask TakePicture(CancellationToken token)
-    {
-        return PlatformTakePicture(token);
-    }
+    public ValueTask TakePicture(CancellationToken token) => PlatformTakePicture(token);
 
     /// <summary>
     /// Starts the camera preview.
     /// </summary>
     /// <returns>A <see cref="ValueTask"/> that can be awaited.</returns>
-    public Task StartCameraPreview(CancellationToken token)
+    public Task StartCameraPreview(CancellationToken token) => PlatformStartCameraPreview(token);
+
+    /// <summary>
+    /// Starts the video recording.
+    /// </summary>
+    /// <param name="stream">The output stream for video recording</param>
+    /// <param name="token"><see cref="CancellationToken"/></param>
+    /// <returns>A <see cref="Task"/> that can be awaited.</returns>
+    /// <exception cref="CameraException"></exception>
+    public Task StartVideoRecording(Stream stream, CancellationToken token)
     {
-        return PlatformStartCameraPreview(token);
+        return PlatformStartVideoRecording(stream, token);
     }
+
+    /// <summary>
+    /// Stops the video recording.
+    /// </summary>
+    /// <param name="token"><see cref="CancellationToken"/></param>
+    /// <returns>A <see cref="Task"/> that can be awaited.</returns>
+    public Task<Stream> StopVideoRecording(CancellationToken token) => PlatformStopVideoRecording(token);
 
     /// <summary>
     /// Stops the camera preview.
     /// </summary>
-    public void StopCameraPreview()
-    {
-        PlatformStopCameraPreview();
-    }
+    public void StopCameraPreview() => PlatformStopCameraPreview();
 
     /// <summary>
     /// Updates the current camera.
@@ -99,13 +116,13 @@ partial class CameraManager(
     /// Updates the flash mode of the camera.
     /// </summary>
     /// <param name="flashMode">The new <see cref="CameraFlashMode"/> to set.</param>
-    //public partial void UpdateFlashMode(CameraFlashMode flashMode);
+    public partial void UpdateFlashMode(CameraFlashMode flashMode);
 
     /// <summary>
     /// Updates the zoom level of the camera.
     /// </summary>
     /// <param name="zoomLevel">The new zoom level to set.</param>
-    //public partial void UpdateZoom(float zoomLevel);
+    public partial void UpdateZoom(float zoomLevel);
 
     /// <summary>
     /// Updates the capture resolution of the camera.
@@ -113,36 +130,55 @@ partial class CameraManager(
     /// <param name="resolution">The <see cref="Size" /> resolution to use when capturing an image from the current camera.</param>
     /// <param name="token">A <see cref="CancellationToken"/> that can be used to cancel the work.</param>
     /// <returns>A <see cref="ValueTask"/> that can be awaited.</returns>
-    //public partial ValueTask UpdateCaptureResolution(Size resolution, CancellationToken token);
+    public partial ValueTask UpdateCaptureResolution(Size resolution, CancellationToken token);
 
     /// <summary>
     /// Performs the capturing of a picture at the platform-specific level. 
     /// </summary>
     /// <param name="token">A <see cref="CancellationToken"/> that can be used to cancel the work.</param>
     /// <returns>A <see cref="ValueTask"/> that can be awaited.</returns>
-    //protected virtual partial ValueTask PlatformTakePicture(CancellationToken token);
+    private partial ValueTask PlatformTakePicture(CancellationToken token);
 
     /// <summary>
     /// Starts the preview from the camera, at the platform-specific level.
     /// </summary>
     /// <param name="token">A <see cref="CancellationToken"/> that can be used to cancel the work.</param>
     /// <returns>A <see cref="Task"/> that can be awaited.</returns>
-    //protected virtual partial Task PlatformStartCameraPreview(CancellationToken token);
+    private partial Task PlatformStartCameraPreview(CancellationToken token);
 
     /// <summary>
     /// Connects to the camera, at the platform-specific level.
     /// </summary>
     /// <param name="token">A <see cref="CancellationToken"/> that can be used to cancel the work.</param>
     /// <returns>A <see cref="Task"/> that can be awaited.</returns>
-    //protected virtual partial Task PlatformConnectCamera(CancellationToken token);
+    private partial Task PlatformConnectCamera(CancellationToken token);
 
     /// <summary>
     /// Disconnects from the camera, at the platform-specific level.
     /// </summary>
-    //protected virtual partial void PlatformDisconnect();
+    private partial void PlatformDisconnect();
 
     /// <summary>
     /// Stops the preview from the camera, at the platform-specific level.
     /// </summary>
-    //protected virtual partial void PlatformStopCameraPreview();
+    private partial void PlatformStopCameraPreview();
+
+    /// <summary>
+    /// Starts video recording and writes the recorded data to the specified stream.
+    /// </summary>
+    /// <remarks>This method is platform-specific and should be overridden in a derived class to provide the actual
+    /// implementation. Ensure that the stream remains open and writable for the duration of the recording.</remarks>
+    /// <param name="stream">The stream to which the video data will be written. Must be writable and not null.</param>
+    /// <param name="token">A cancellation token that can be used to cancel the video recording operation.</param>
+    /// <returns>A task that represents the asynchronous video recording operation.</returns>
+    private partial Task PlatformStartVideoRecording(Stream stream, CancellationToken token);
+
+    /// <summary>
+    /// Stops the video recording process asynchronously.
+    /// </summary>
+    /// <remarks>This method is platform-specific and should be overridden in a derived class to implement the stop
+    /// functionality.</remarks>
+    /// <param name="token">A cancellation token that can be used to cancel the stop operation.</param>
+    /// <returns>A task that represents the asynchronous stop operation.</returns>
+    private partial Task<Stream> PlatformStopVideoRecording(CancellationToken token);
 }

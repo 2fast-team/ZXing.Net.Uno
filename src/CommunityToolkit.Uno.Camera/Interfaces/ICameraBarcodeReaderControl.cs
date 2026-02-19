@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using ZXing.Net.Uno;
+﻿using ZXing.Net.Uno;
 
 namespace CommunityToolkit.Uno.Core;
 

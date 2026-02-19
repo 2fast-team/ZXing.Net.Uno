@@ -13,4 +13,8 @@ public record BarcodeReaderOptions
 	public bool Multiple { get; init; }
 
 	public bool UseCode39ExtendedMode { get; init; }
+
+    public string CharacterSet { get; init; } = "UTF-8";
+
+    public bool AssumeGS1 { get; init; }
 }

@@ -234,24 +234,28 @@ public sealed partial class CameraControl : Control, ICameraControl
         return CameraProvider.AvailableCameras;
     }
 
-    ///// <summary>
-    ///// Event that is raised when the camera capture fails.
-    ///// </summary>
-    //public event EventHandler<MediaCaptureFailedEventArgs> MediaCaptureFailed
-    //{
-    //    add => weakEventManager.AddEventHandler(value);
-    //    remove => weakEventManager.RemoveEventHandler(value);
-    //}
+    Task<Stream> ICameraControl.CaptureImage(CancellationToken token)
+    {
+        throw new NotImplementedException();
+    }
 
-    ///// <summary>
-    ///// Event that is raised when the camera captures an image.
-    ///// </summary>
-    ///// <remarks>
-    ///// The <see cref="MediaCapturedEventArgs"/> contains the captured image data.
-    ///// </remarks>
-    //public event EventHandler<MediaCapturedEventArgs> MediaCaptured
-    //{
-    //    add => weakEventManager.AddEventHandler(value);
-    //    remove => weakEventManager.RemoveEventHandler(value);
-    //}
+    Task ICameraControl.StartCameraPreview(CancellationToken token)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task StartVideoRecording(CancellationToken token = default)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task StartVideoRecording(Stream stream, CancellationToken token = default)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<Stream> StopVideoRecording(CancellationToken token = default)
+    {
+        throw new NotImplementedException();
+    }
 }
