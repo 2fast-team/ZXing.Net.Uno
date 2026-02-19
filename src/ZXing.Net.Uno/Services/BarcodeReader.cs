@@ -2,46 +2,48 @@
 
 public class BarcodeReader : Readers.IBarcodeReader
 {
-	BarcodeReaderGeneric zxingReader;
+    BarcodeReaderGeneric zxingReader;
 
-	public BarcodeReader()
-	{
-		zxingReader = new BarcodeReaderGeneric();
-	}
-
-	BarcodeReaderOptions options;
-	public BarcodeReaderOptions Options
-	{
-
-		get => options ??= new BarcodeReaderOptions();
-		set
-		{
-			options = value ?? new BarcodeReaderOptions();
-			zxingReader.Options.PossibleFormats = options.Formats.ToZXingList();
-			zxingReader.Options.TryHarder = options.TryHarder;
-			zxingReader.AutoRotate = options.AutoRotate;
-			zxingReader.Options.TryInverted = options.TryInverted;
-			zxingReader.Options.UseCode39ExtendedMode = options.UseCode39ExtendedMode;
+    public BarcodeReader()
+    {
+        zxingReader = new BarcodeReaderGeneric();
     }
-	}
 
-	public BarcodeResult[] Decode(PixelBufferHolder image)
-	{
-		var w = (int)image.Size.Width;
-		var h = (int)image.Size.Height;
+    BarcodeReaderOptions options;
+    public BarcodeReaderOptions Options
+    {
 
-		LuminanceSource ls = default;
+        get => options ??= new BarcodeReaderOptions();
+        set
+        {
+            options = value ?? new BarcodeReaderOptions();
+            zxingReader.Options.PossibleFormats = options.Formats.ToZXingList();
+            zxingReader.Options.TryHarder = options.TryHarder;
+            zxingReader.AutoRotate = options.AutoRotate;
+            zxingReader.Options.TryInverted = options.TryInverted;
+            zxingReader.Options.UseCode39ExtendedMode = options.UseCode39ExtendedMode;
+            zxingReader.Options.CharacterSet = options.CharacterSet;
+            zxingReader.Options.AssumeGS1 = options.AssumeGS1;
+        }
+    }
+
+    public BarcodeResult[] Decode(PixelBufferHolder image)
+    {
+        var w = (int)image.Size.Width;
+        var h = (int)image.Size.Height;
+
+        LuminanceSource ls = default;
 
 #if ANDROID
 		ls = new ByteBufferYUVLuminanceSource(image.Data, w, h, 0, 0, w, h);
 #elif MACCATALYST || IOS
-		ls = new CVPixelBufferBGRA32LuminanceSource(image.Data, w, h);
+			ls = new CVPixelBufferBGRA32LuminanceSource(image.Data, w, h);
 #elif WINDOWS
-		ls = new SoftwareBitmapLuminanceSource(image.Data);
+			ls = new SoftwareBitmapLuminanceSource(image.Data);
 #endif
 
-		if (Options.Multiple)
-			return zxingReader.DecodeMultiple(ls)?.ToBarcodeResults();
+        if (Options.Multiple)
+            return zxingReader.DecodeMultiple(ls)?.ToBarcodeResults();
 
 		Result result;
 		try
@@ -52,31 +54,31 @@ public class BarcodeReader : Readers.IBarcodeReader
         }
 		catch (Exception)
 		{
-            return null;
-        }
+        return null;
+    }
 
         return null;
 	}
 
 #if WINDOWS
 	public BarcodeResult[] Decode(SoftwareBitmapLuminanceSource ls)
-    {
+            {
         if (Options.Multiple)
             return zxingReader.DecodeMultiple(ls)?.ToBarcodeResults();
 
         Result result;
         try
-        {
+                {
             result = zxingReader.Decode(ls);
             if (result != null)
                 return new[] { result.ToBarcodeResult() };
-        }
+                }
         catch (Exception)
         {
             return null;
-        }
+            }
 
         return null;
-    }
+        }
 #endif
 }

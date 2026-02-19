@@ -106,11 +106,11 @@ partial class CameraManager
 
             memoryStream.Position = 0;
 
-            cameraView.OnMediaCaptured(memoryStream);
+            _cameraView.OnMediaCaptured(memoryStream);
         }
         catch (Exception ex)
         {
-            cameraView.OnMediaCapturedFailed(ex.Message);
+            _cameraView.OnMediaCapturedFailed(ex.Message);
             throw;
         }
     }
@@ -127,11 +127,11 @@ partial class CameraManager
             return;
         }
 
-        cameraView.SelectedCamera ??= cameraProvider.AvailableCameras?.FirstOrDefault() ?? throw new CameraException("No camera available on device");
+        _cameraView.SelectedCamera ??= _cameraProvider.AvailableCameras?.FirstOrDefault() ?? throw new CameraException("No camera available on device");
 
         _mediaCapture = new MediaCapture();
 
-        await _mediaCapture.InitializeCameraForCameraView(cameraView.SelectedCamera.DeviceId, token);
+        await _mediaCapture.InitializeCameraForCameraView(_cameraView.SelectedCamera.DeviceId, token);
 
         _frameSource = _mediaCapture.FrameSources.FirstOrDefault(source => source.Value.Info.MediaStreamType == MediaStreamType.VideoRecord && source.Value.Info.SourceKind == MediaFrameSourceKind.Color).Value;
 
@@ -145,7 +145,7 @@ partial class CameraManager
 
         IsInitialized = true;
 
-        await PlatformUpdateResolution(cameraView.ImageCaptureResolution, token);
+        await PlatformUpdateResolution(_cameraView.ImageCaptureResolution, token);
 
         OnLoaded.Invoke();
     }
@@ -218,16 +218,16 @@ partial class CameraManager
             return;
         }
 
-        if (cameraView.SelectedCamera is null)
+        if (_cameraView.SelectedCamera is null)
         {
             throw new CameraException($"Unable to update Capture Resolution because {nameof(ICameraControl)}.{nameof(ICameraControl.SelectedCamera)} is null.");
         }
 
-        var filteredPropertiesList = cameraView.SelectedCamera.ImageEncodingProperties.Where(p => p.Width <= resolution.Width && p.Height <= resolution.Height).ToList();
+        var filteredPropertiesList = _cameraView.SelectedCamera.ImageEncodingProperties.Where(p => p.Width <= resolution.Width && p.Height <= resolution.Height).ToList();
 
         if (filteredPropertiesList.Count is 0)
         {
-            filteredPropertiesList = [.. cameraView.SelectedCamera.ImageEncodingProperties.OrderByDescending(p => p.Width * p.Height)];
+            filteredPropertiesList = [.. _cameraView.SelectedCamera.ImageEncodingProperties.OrderByDescending(p => p.Width * p.Height)];
         }
 
         if (filteredPropertiesList.Count is not 0)

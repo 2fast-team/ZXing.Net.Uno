@@ -10,15 +10,15 @@ namespace CommunityToolkit.Uno.Core;
 /// <remarks>
 /// Creates a new instance of the <see cref="CameraManager"/> class.
 /// </remarks>
-/// <param name="cameraView">The <see cref="ICameraControl"/> implementation.</param>
-/// <param name="cameraProvider">The <see cref="CameraProvider"/> implementation.</param>
+/// <param name="_cameraView">The <see cref="ICameraControl"/> implementation.</param>
+/// <param name="_cameraProvider">The <see cref="CameraProvider"/> implementation.</param>
 /// <param name="onLoaded">The <see cref="Action"/> to execute when the camera is loaded.</param>
 /// <param name="analyseImages">The <see cref="bool"/> determines whether the images are analysed for barcode recognition.</param>
 /// <exception cref="NullReferenceException">Thrown when no <see cref="CameraProvider"/> can be resolved.</exception>
 /// <exception cref="InvalidOperationException">Thrown when there are no cameras available.</exception>
 sealed partial class CameraManager(
-    ICameraControl cameraView,
-    ICameraProvider cameraProvider,
+    ICameraControl _cameraView,
+    ICameraProvider _cameraProvider,
     Action onLoaded,
     bool analyseImages = false) : IDisposable
 {
@@ -39,11 +39,11 @@ sealed partial class CameraManager(
     /// <returns>A <see cref="ValueTask"/> that can be awaited.</returns>
     public async Task ConnectCamera(CancellationToken token)
     {
-        if (cameraProvider.AvailableCameras is null)
+        if (_cameraProvider.AvailableCameras is null)
         {
-            await cameraProvider.RefreshAvailableCameras(token);
+            await _cameraProvider.RefreshAvailableCameras(token);
         }
-        cameraView.SelectedCamera ??= cameraProvider.AvailableCameras?.FirstOrDefault() ?? throw new CameraException("No camera available on device");
+        _cameraView.SelectedCamera ??= _cameraProvider.AvailableCameras?.FirstOrDefault() ?? throw new CameraException("No camera available on device");
         await PlatformConnectCamera(token);
     }
 

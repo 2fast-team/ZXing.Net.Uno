@@ -28,69 +28,66 @@ partial class CameraManager
     CaptureDelegate _captureDelegate;
     DispatchQueue _dispatchQueue;
 
-    AVCaptureSession? captureSession;
+    AVCaptureFlashMode _flashMode;
 
-    AVCaptureFlashMode flashMode;
+    IDisposable? _orientationDidChangeObserver;
+    PreviewView? _previewView;
 
-    IDisposable? orientationDidChangeObserver;
-    AVCapturePhotoOutput? photoOutput;
-    PreviewView? previewView;
-
-    AVCaptureDeviceInput? videoInput;
-    AVCaptureVideoOrientation videoOrientation;
-    AVCaptureMovieFileOutput? videoOutput;
-    string? videoRecordingFileName;
-    TaskCompletionSource? videoRecordingFinalizeTcs;
-    Stream? videoRecordingStream;
+    AVCaptureDeviceInput? _videoInput;
+    AVCaptureVideoOrientation _videoOrientation;
+    AVCaptureMovieFileOutput? _videoOutput;
+    string? _videoRecordingFileName;
+    TaskCompletionSource? _videoRecordingFinalizeTcs;
+    Stream? _videoRecordingStream;
 
     /// <inheritdoc />
     public void Dispose()
     {
         CleanupVideoRecordingResources();
 
-        captureSession?.StopRunning();
-        captureSession?.Dispose();
-        captureSession = null;
+        _captureSession?.StopRunning();
+        _captureSession?.Dispose();
+        _captureSession = null;
 
         _captureInput?.Dispose();
         _captureInput = null;
 
         _captureDevice = null;
 
-        orientationDidChangeObserver?.Dispose();
-        orientationDidChangeObserver = null;
+        _orientationDidChangeObserver?.Dispose();
+        _orientationDidChangeObserver = null;
 
-        photoOutput?.Dispose();
-        photoOutput = null;
+        _photoOutput?.Dispose();
+        _photoOutput = null;
 
-        previewView?.Dispose();
-        previewView = null;
+        _previewView?.Dispose();
+        _previewView = null;
 
-        videoRecordingStream?.Dispose();
-        videoRecordingStream = null;
+        _videoRecordingStream?.Dispose();
+        _videoRecordingStream = null;
     }
 
     public NativePlatformCameraPreviewView CreatePlatformView()
     {
-        captureSession = new AVCaptureSession
+        _captureSession = new AVCaptureSession
         {
             SessionPreset = AVCaptureSession.PresetPhoto
         };
 
-        previewView = new PreviewView
+        _previewView = new PreviewView
         {
-            Session = captureSession
+            Session = _captureSession
         };
 
-        orientationDidChangeObserver = UIDevice.Notifications.ObserveOrientationDidChange((_, _) => UpdateVideoOrientation());
+        _orientationDidChangeObserver = UIDevice.Notifications.ObserveOrientationDidChange((_, _) => UpdateVideoOrientation());
         UpdateVideoOrientation();
 
-        return previewView;
+        return _previewView;
     }
 
     public partial void UpdateFlashMode(CameraFlashMode flashMode)
     {
-        this.flashMode = flashMode.ToPlatform();
+        this._flashMode = flashMode.ToPlatform();
     }
 
     public partial void UpdateZoom(float zoomLevel)
@@ -118,7 +115,7 @@ partial class CameraManager
 
     public partial ValueTask UpdateCaptureResolution(Size resolution, CancellationToken token)
     {
-        if (cameraView.SelectedCamera is null)
+        if (_cameraView.SelectedCamera is null)
         {
             throw new CameraException($"Unable to update Capture Resolution because {nameof(ICameraControl)}.{nameof(ICameraControl.SelectedCamera)} is null.");
         }
@@ -135,13 +132,13 @@ partial class CameraManager
             return ValueTask.CompletedTask;
         }
 
-        var formatsMatchingResolution = cameraView.SelectedCamera.SupportedFormats
+        var formatsMatchingResolution = _cameraView.SelectedCamera.SupportedFormats
             .Where(format => MatchesResolution(format, resolution))
             .ToList();
 
         var availableFormats = formatsMatchingResolution.Count is not 0
             ? formatsMatchingResolution
-            : GetPhotoCompatibleFormats(cameraView.SelectedCamera.SupportedFormats);
+            : GetPhotoCompatibleFormats(_cameraView.SelectedCamera.SupportedFormats);
 
         var selectedFormat = availableFormats
             .OrderByDescending(f => f.ResolutionArea)
@@ -163,29 +160,73 @@ partial class CameraManager
 
     private async partial Task PlatformStartCameraPreview(CancellationToken token)
     {
-        if (captureSession is null)
+        if (_captureSession is null)
         {
             return;
         }
 
-        captureSession.BeginConfiguration();
+        _captureSession.BeginConfiguration();
 
-        foreach (var input in captureSession.Inputs)
+        foreach (var input in _captureSession.Inputs)
         {
-            captureSession.RemoveInput(input);
+            _captureSession.RemoveInput(input);
             input.Dispose();
         }
 
-        cameraView.SelectedCamera ??= cameraProvider.AvailableCameras?.FirstOrDefault() ?? throw new CameraException("No camera available on device");
+        // Prioritize cameras suitable for barcode scanning
+        AVCaptureDevice selectedDevice = null;
+        AVCaptureDevice fallbackDevice = null;
 
-        _captureDevice = cameraView.SelectedCamera.CaptureDevice ?? throw new CameraException($"No Camera found");
-        _captureInput = new AVCaptureDeviceInput(_captureDevice, out _);
-        captureSession.AddInput(_captureInput);
-
-        if (photoOutput is null)
+        foreach (var device in _cameraProvider.AvailableCameras)
         {
-            photoOutput = new AVCapturePhotoOutput();
-            captureSession.AddOutput(photoOutput);
+            // Skip depth-only cameras (TrueDepth, LiDAR) as they're not suitable for barcode scanning
+            if (device.CaptureDevice.DeviceType == AVCaptureDeviceType.BuiltInTrueDepthCamera ||
+                device.CaptureDevice.DeviceType == AVCaptureDeviceType.BuiltInLiDarDepthCamera)
+                continue;
+
+            var isCorrectPosition = device.CaptureDevice.Position == AVCaptureDevicePosition.Front ||
+                                    device.CaptureDevice.Position == AVCaptureDevicePosition.Back;
+
+            if (isCorrectPosition)
+            {
+                // Prefer multi-camera systems (Dual, Triple, DualWide) - these are the main cameras on modern iPhones
+                if (device.CaptureDevice.DeviceType == AVCaptureDeviceType.BuiltInDualCamera ||
+                    device.CaptureDevice.DeviceType == AVCaptureDeviceType.BuiltInTripleCamera ||
+                    device.CaptureDevice.DeviceType == AVCaptureDeviceType.BuiltInDualWideCamera)
+                {
+                    selectedDevice = device.CaptureDevice;
+                    break; // Multi-camera systems are ideal for barcode scanning
+                }
+                // Wide-angle is a good standard camera
+                else if (device.CaptureDevice.DeviceType == AVCaptureDeviceType.BuiltInWideAngleCamera && selectedDevice == null)
+                {
+                    selectedDevice = device.CaptureDevice;
+                }
+                // Avoid ultra-wide and telephoto, but keep as last resort fallback
+                else if (fallbackDevice == null)
+                {
+                    fallbackDevice = device.CaptureDevice;
+                }
+            }
+        }
+
+        // Use selected device, or fallback if nothing better was found
+        _captureDevice = selectedDevice ?? fallbackDevice;
+
+        if (_captureDevice == null)
+        {
+            _cameraView.SelectedCamera ??= _cameraProvider.AvailableCameras?.FirstOrDefault() ?? throw new CameraException("No camera available on device");
+
+            _captureDevice = _cameraView.SelectedCamera.CaptureDevice ?? throw new CameraException($"No Camera found");
+        }
+
+        _captureInput = new AVCaptureDeviceInput(_captureDevice, out _);
+        _captureSession.AddInput(_captureInput);
+
+        if (_photoOutput is null)
+        {
+            _photoOutput = new AVCapturePhotoOutput();
+            _captureSession.AddOutput(_photoOutput);
         }
 
         if (AnalyseImages)
@@ -231,24 +272,24 @@ partial class CameraManager
         }
 
 
-        await UpdateCaptureResolution(cameraView.ImageCaptureResolution, token);
+        await UpdateCaptureResolution(_cameraView.ImageCaptureResolution, token);
 
-        captureSession.CommitConfiguration();
-        captureSession.StartRunning();
+        _captureSession.CommitConfiguration();
+        _captureSession.StartRunning();
         IsInitialized = true;
         OnLoaded.Invoke();
     }
 
     private partial void PlatformStopCameraPreview()
     {
-        if (captureSession is null)
+        if (_captureSession is null)
         {
             return;
         }
 
-        if (captureSession.Running)
+        if (_captureSession.Running)
         {
-            captureSession.StopRunning();
+            _captureSession.StopRunning();
         }
 
         IsInitialized = false;
@@ -266,7 +307,7 @@ partial class CameraManager
             throw new CameraException("Camera permission is not granted. Please enable it in the app settings.");
         }
 
-        if (captureSession is null)
+        if (_captureSession is null)
         {
             throw new CameraException("Capture session is not initialized. Call ConnectCamera first.");
         }
@@ -275,20 +316,20 @@ partial class CameraManager
 
         var videoDevice = AVCaptureDevice.GetDefaultDevice(AVMediaTypes.Video) ?? throw new CameraException("Unable to get video device");
 
-        videoInput = new AVCaptureDeviceInput(videoDevice, out NSError? error);
+        _videoInput = new AVCaptureDeviceInput(videoDevice, out NSError? error);
         if (error is not null)
         {
             throw new CameraException($"Error creating video input: {error.LocalizedDescription}");
         }
 
-        if (!captureSession.CanAddInput(videoInput))
+        if (!_captureSession.CanAddInput(_videoInput))
         {
-            videoInput?.Dispose();
+            _videoInput?.Dispose();
             throw new CameraException("Unable to add video input to capture session.");
         }
 
-        captureSession.BeginConfiguration();
-        captureSession.AddInput(videoInput);
+        _captureSession.BeginConfiguration();
+        _captureSession.AddInput(_videoInput);
 
         try
         {
@@ -296,9 +337,9 @@ partial class CameraManager
             if (audioDevice is not null)
             {
                 _audioInput = new AVCaptureDeviceInput(audioDevice, out NSError? audioError);
-                if (audioError is null && captureSession.CanAddInput(_audioInput))
+                if (audioError is null && _captureSession.CanAddInput(_audioInput))
                 {
-                    captureSession.AddInput(_audioInput);
+                    _captureSession.AddInput(_audioInput);
                 }
                 else
                 {
@@ -312,126 +353,126 @@ partial class CameraManager
             // Ignore audio configuration issues; proceed with video-only recording
         }
 
-        videoOutput = new AVCaptureMovieFileOutput();
+        _videoOutput = new AVCaptureMovieFileOutput();
 
-        if (!captureSession.CanAddOutput(videoOutput))
+        if (!_captureSession.CanAddOutput(_videoOutput))
         {
-            captureSession.RemoveInput(videoInput);
+            _captureSession.RemoveInput(_videoInput);
             if (_audioInput is not null)
             {
-                captureSession.RemoveInput(_audioInput);
+                _captureSession.RemoveInput(_audioInput);
                 _audioInput.Dispose();
                 _audioInput = null;
             }
 
-            videoInput?.Dispose();
-            videoOutput?.Dispose();
-            captureSession.CommitConfiguration();
+            _videoInput?.Dispose();
+            _videoOutput?.Dispose();
+            _captureSession.CommitConfiguration();
             throw new CameraException("Unable to add video output to capture session.");
         }
 
-        captureSession.AddOutput(videoOutput);
-        captureSession.CommitConfiguration();
+        _captureSession.AddOutput(_videoOutput);
+        _captureSession.CommitConfiguration();
 
-        videoRecordingStream = stream;
-        videoRecordingFinalizeTcs = new TaskCompletionSource();
-        videoRecordingFileName = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.mov");
+        _videoRecordingStream = stream;
+        _videoRecordingFinalizeTcs = new TaskCompletionSource();
+        _videoRecordingFileName = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.mov");
 
-        var outputUrl = NSUrl.FromFilename(videoRecordingFileName);
-        videoOutput.StartRecordingToOutputFile(outputUrl, new AVCaptureMovieFileOutputRecordingDelegate(videoRecordingFinalizeTcs));
+        var outputUrl = NSUrl.FromFilename(_videoRecordingFileName);
+        _videoOutput.StartRecordingToOutputFile(outputUrl, new AVCaptureMovieFileOutputRecordingDelegate(_videoRecordingFinalizeTcs));
     }
 
     private async partial Task<Stream> PlatformStopVideoRecording(CancellationToken token)
     {
-        if (captureSession is null
-            || videoRecordingFileName is null
-            || videoInput is null
-            || videoOutput is null
-            || videoRecordingStream is null
-            || videoRecordingFinalizeTcs is null)
+        if (_captureSession is null
+            || _videoRecordingFileName is null
+            || _videoInput is null
+            || _videoOutput is null
+            || _videoRecordingStream is null
+            || _videoRecordingFinalizeTcs is null)
         {
             return Stream.Null;
         }
 
-        videoOutput.StopRecording();
-        await videoRecordingFinalizeTcs.Task.WaitAsync(token);
+        _videoOutput.StopRecording();
+        await _videoRecordingFinalizeTcs.Task.WaitAsync(token);
 
-        if (File.Exists(videoRecordingFileName))
+        if (File.Exists(_videoRecordingFileName))
         {
-            await using var inputStream = new FileStream(videoRecordingFileName, FileMode.Open, FileAccess.Read, FileShare.Read);
-            await inputStream.CopyToAsync(videoRecordingStream, token);
-            await videoRecordingStream.FlushAsync(token);
-            if (videoRecordingStream.CanSeek)
+            await using var inputStream = new FileStream(_videoRecordingFileName, FileMode.Open, FileAccess.Read, FileShare.Read);
+            await inputStream.CopyToAsync(_videoRecordingStream, token);
+            await _videoRecordingStream.FlushAsync(token);
+            if (_videoRecordingStream.CanSeek)
             {
-                videoRecordingStream.Position = 0;
+                _videoRecordingStream.Position = 0;
             }
         }
 
         CleanupVideoRecordingResources();
 
-        return videoRecordingStream;
+        return _videoRecordingStream;
     }
 
     void CleanupVideoRecordingResources()
     {
-        if (captureSession is not null)
+        if (_captureSession is not null)
         {
-            captureSession.BeginConfiguration();
+            _captureSession.BeginConfiguration();
 
-            foreach (var input in captureSession.Inputs)
+            foreach (var input in _captureSession.Inputs)
             {
-                captureSession.RemoveInput(input);
+                _captureSession.RemoveInput(input);
                 input.Dispose();
             }
 
-            foreach (var output in captureSession.Outputs)
+            foreach (var output in _captureSession.Outputs)
             {
-                captureSession.RemoveOutput(output);
+                _captureSession.RemoveOutput(output);
                 output.Dispose();
             }
 
             // Restore to photo preset for preview after video recording
-            captureSession.SessionPreset = AVCaptureSession.PresetPhoto;
-            captureSession.CommitConfiguration();
+            _captureSession.SessionPreset = AVCaptureSession.PresetPhoto;
+            _captureSession.CommitConfiguration();
         }
 
-        videoOutput = null;
-        videoInput = null;
+        _videoOutput = null;
+        _videoInput = null;
         _audioInput = null;
 
         // Clean up temporary file
-        if (videoRecordingFileName is not null)
+        if (_videoRecordingFileName is not null)
         {
-            if (File.Exists(videoRecordingFileName))
+            if (File.Exists(_videoRecordingFileName))
             {
-                File.Delete(videoRecordingFileName);
+                File.Delete(_videoRecordingFileName);
             }
 
-            videoRecordingFileName = null;
+            _videoRecordingFileName = null;
         }
 
-        videoRecordingFinalizeTcs = null;
+        _videoRecordingFinalizeTcs = null;
     }
 
     private async partial ValueTask PlatformTakePicture(CancellationToken token)
     {
-        ArgumentNullException.ThrowIfNull(photoOutput);
+        ArgumentNullException.ThrowIfNull(_photoOutput);
 
         var capturePhotoSettings = AVCapturePhotoSettings.FromFormat(codecSettings);
-        capturePhotoSettings.FlashMode = photoOutput.SupportedFlashModes.Contains(flashMode) ? flashMode : photoOutput.SupportedFlashModes.First();
+        capturePhotoSettings.FlashMode = _photoOutput.SupportedFlashModes.Contains(_flashMode) ? _flashMode : _photoOutput.SupportedFlashModes.First();
 
         if (AVMediaTypes.Video.GetConstant() is NSString avMediaTypeVideo)
         {
-            var photoOutputConnection = photoOutput.ConnectionFromMediaType(avMediaTypeVideo);
+            var photoOutputConnection = _photoOutput.ConnectionFromMediaType(avMediaTypeVideo);
             if (photoOutputConnection is not null)
             {
-                photoOutputConnection.VideoOrientation = videoOrientation;
+                photoOutputConnection.VideoOrientation = _videoOrientation;
             }
         }
 
         var wrapper = new AVCapturePhotoCaptureDelegateWrapper();
 
-        photoOutput.CapturePhoto(capturePhotoSettings, wrapper);
+        _photoOutput.CapturePhoto(capturePhotoSettings, wrapper);
 
         var result = await wrapper.Task.WaitAsync(token);
         if (result.Error is not null)
@@ -442,7 +483,7 @@ partial class CameraManager
                 failureReason = $"{failureReason} - {result.Error.LocalizedFailureReason}";
             }
 
-            cameraView.OnMediaCapturedFailed(failureReason);
+            _cameraView.OnMediaCapturedFailed(failureReason);
             return;
         }
 
@@ -454,17 +495,17 @@ partial class CameraManager
         catch (Exception e)
         {
             // possible exception: ObjCException NSInvalidArgumentException NSAllocateMemoryPages(...) failed in AVCapturePhoto.get_FileDataRepresentation()
-            cameraView.OnMediaCapturedFailed($"Unable to retrieve the file data representation from the captured result: {e.Message}");
+            _cameraView.OnMediaCapturedFailed($"Unable to retrieve the file data representation from the captured result: {e.Message}");
             return;
         }
 
         if (imageData is null)
         {
-            cameraView.OnMediaCapturedFailed("Unable to retrieve the file data representation from the captured result.");
+            _cameraView.OnMediaCapturedFailed("Unable to retrieve the file data representation from the captured result.");
         }
         else
         {
-            cameraView.OnMediaCaptured(imageData);
+            _cameraView.OnMediaCaptured(imageData);
         }
     }
 
@@ -498,15 +539,15 @@ partial class CameraManager
 
     void UpdateVideoOrientation()
     {
-        videoOrientation = GetVideoOrientation();
-        previewView?.UpdatePreviewVideoOrientation(videoOrientation);
+        _videoOrientation = GetVideoOrientation();
+        _previewView?.UpdatePreviewVideoOrientation(_videoOrientation);
     }
 
     IEnumerable<AVCaptureDeviceFormat> GetPhotoCompatibleFormats(IEnumerable<AVCaptureDeviceFormat> formats)
     {
-        if (photoOutput is not null)
+        if (_photoOutput is not null)
         {
-            var photoPixelFormats = photoOutput.GetSupportedPhotoPixelFormatTypesForFileType(nameof(AVFileTypes.Jpeg));
+            var photoPixelFormats = _photoOutput.GetSupportedPhotoPixelFormatTypesForFileType(nameof(AVFileTypes.Jpeg));
             return formats.Where(format => photoPixelFormats.Contains((NSNumber)format.FormatDescription.MediaSubType));
         }
 

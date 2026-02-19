@@ -51,7 +51,7 @@ partial class CameraManager
     public async Task SetExtensionMode(int mode, CancellationToken token)
     {
         extensionMode = mode;
-        if (cameraView.SelectedCamera is null
+        if (_cameraView.SelectedCamera is null
             || _processCameraProvider is null
             || _cameraPreview is null
             || _imageCapture is null
@@ -60,7 +60,7 @@ partial class CameraManager
             return;
         }
 
-        _camera = await RebindCamera(_processCameraProvider, cameraView.SelectedCamera, token, _cameraPreview, _imageCapture, _videoCapture);
+        _camera = await RebindCamera(_processCameraProvider, _cameraView.SelectedCamera, token, _cameraPreview, _imageCapture, _videoCapture);
 
         _cameraControl = _camera.CameraControl;
     }
@@ -114,7 +114,7 @@ partial class CameraManager
     // IN the future change the return type to be an alias
     public NativePlatformCameraPreviewView CreatePlatformView()
     {
-        _imageCallback = new ImageCallBack(cameraView);
+        _imageCallback = new ImageCallBack(_cameraView);
         _previewView = new NativePlatformCameraPreviewView(context);
         if (NativePlatformCameraPreviewView.ScaleType.FitCenter is not null)
         {
@@ -280,15 +280,15 @@ partial class CameraManager
             return;
         }
 
-        cameraView.SelectedCamera ??= cameraProvider.AvailableCameras?.FirstOrDefault() ?? throw new CameraException("No camera available on device");
+        _cameraView.SelectedCamera ??= _cameraProvider.AvailableCameras?.FirstOrDefault() ?? throw new CameraException("No camera available on device");
 
         if (AnalyseImages)
         {
-            _camera = await RebindCamera(_processCameraProvider, cameraView.SelectedCamera, token, _cameraPreview, _imageAnalyzer, _imageCapture, _videoCapture);
+            _camera = await RebindCamera(_processCameraProvider, _cameraView.SelectedCamera, token, _cameraPreview, _imageAnalyzer, _imageCapture, _videoCapture);
         }
         else
         {
-            _camera = await RebindCamera(_processCameraProvider, cameraView.SelectedCamera, token, _cameraPreview, _imageCapture, _videoCapture);
+            _camera = await RebindCamera(_processCameraProvider, _cameraView.SelectedCamera, token, _cameraPreview, _imageCapture, _videoCapture);
         }
 
         _cameraControl = _camera.CameraControl;
@@ -340,11 +340,11 @@ partial class CameraManager
 
         videoRecordingStream = stream;
 
-        cameraView.SelectedCamera ??= cameraProvider.AvailableCameras?.FirstOrDefault() ?? throw new CameraException("No camera available on device");
+        _cameraView.SelectedCamera ??= _cameraProvider.AvailableCameras?.FirstOrDefault() ?? throw new CameraException("No camera available on device");
 
         if (_camera is null || !IsVideoCaptureAlreadyBound())
         {
-            _camera = await RebindCamera(_processCameraProvider, cameraView.SelectedCamera, token, _cameraPreview, _imageCapture, _videoCapture);
+            _camera = await RebindCamera(_processCameraProvider, _cameraView.SelectedCamera, token, _cameraPreview, _imageCapture, _videoCapture);
             _cameraControl = _camera.CameraControl;
         }
 

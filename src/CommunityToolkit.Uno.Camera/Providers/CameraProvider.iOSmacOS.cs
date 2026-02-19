@@ -10,93 +10,93 @@ namespace CommunityToolkit.Uno.Core;
 
 partial class CameraProvider
 {
-	static readonly AVCaptureDeviceType[] captureDevices = InitializeCaptureDevices();
+    static readonly AVCaptureDeviceType[] captureDevices = InitializeCaptureDevices();
 
-	public partial ValueTask RefreshAvailableCameras(CancellationToken token)
-	{
-		var discoverySession = AVCaptureDeviceDiscoverySession.Create(captureDevices, AVMediaTypes.Video, AVCaptureDevicePosition.Unspecified);
-		var availableCameras = new List<CameraInfo>();
+    static AVCaptureDeviceType[] InitializeCaptureDevices()
+    {
+        AVCaptureDeviceType[] deviceTypes =
+        [
+            AVCaptureDeviceType.BuiltInWideAngleCamera,
+            AVCaptureDeviceType.BuiltInTelephotoCamera,
+            AVCaptureDeviceType.BuiltInDualCamera
+        ];
 
-		foreach (var device in discoverySession.Devices)
-		{
-			var position = device.Position switch
-			{
-				AVCaptureDevicePosition.Front => CameraPosition.Front,
-				AVCaptureDevicePosition.Back => CameraPosition.Rear,
-				AVCaptureDevicePosition.Unspecified => CameraPosition.Unknown,
-				_ => throw new NotSupportedException($"{device.Position} is not yet supported")
-			};
+        if (UIDevice.CurrentDevice.CheckSystemVersion(11, 1))
+        {
+            deviceTypes = [.. deviceTypes,
+                AVCaptureDeviceType.BuiltInTrueDepthCamera];
+        }
 
-			var supportedFormats = new List<AVCaptureDeviceFormat>();
-			var supportedResolutions = new List<Size>();
+        if (UIDevice.CurrentDevice.CheckSystemVersion(13, 0))
+        {
+            deviceTypes = [.. deviceTypes,
+                AVCaptureDeviceType.BuiltInUltraWideCamera,
+                AVCaptureDeviceType.BuiltInTripleCamera,
+                AVCaptureDeviceType.BuiltInDualWideCamera];
+        }
 
-			foreach (var format in device.Formats)
-			{
-				var dimension = ((CMVideoFormatDescription)format.FormatDescription).Dimensions;
+        if (UIDevice.CurrentDevice.CheckSystemVersion(15, 4))
+        {
+            deviceTypes = [.. deviceTypes,
+                AVCaptureDeviceType.BuiltInLiDarDepthCamera];
+        }
 
-				if ((int)format.FormatDescription.VideoCodecType == (int)CVPixelFormatType.CV420YpCbCr8BiPlanarVideoRange)
-				{
-					continue;
-				}
+        return deviceTypes;
+    }
 
-				if (supportedResolutions.Contains(new(dimension.Width, dimension.Height)))
-				{
-					continue;
-				}
+    public partial ValueTask RefreshAvailableCameras(CancellationToken token)
+    {
+        var discoverySession = AVCaptureDeviceDiscoverySession.Create(captureDevices, AVMediaTypes.Video, AVCaptureDevicePosition.Unspecified);
+        var availableCameras = new List<CameraInfo>();
 
-				supportedFormats.Add(format);
-				supportedResolutions.Add(new(dimension.Width, dimension.Height));
-			}
+        foreach (var device in discoverySession.Devices)
+        {
+            var position = device.Position switch
+            {
+                AVCaptureDevicePosition.Front => CameraPosition.Front,
+                AVCaptureDevicePosition.Back => CameraPosition.Rear,
+                AVCaptureDevicePosition.Unspecified => CameraPosition.Unknown,
+                _ => throw new NotSupportedException($"{device.Position} is not yet supported")
+            };
 
-			var cameraInfo = new CameraInfo(device.LocalizedName,
-				device.UniqueID,
-				position,
-				device.HasFlash,
-				(float)device.MinAvailableVideoZoomFactor,
-				(float)device.MaxAvailableVideoZoomFactor,
-				supportedResolutions,
-				device,
-				supportedFormats
-			);
+            var supportedFormats = new List<AVCaptureDeviceFormat>();
+            var supportedResolutions = new List<Size>();
 
-			availableCameras.Add(cameraInfo);
-		}
+            foreach (var format in device.Formats)
+            {
+                var dimension = ((CMVideoFormatDescription)format.FormatDescription).Dimensions;
 
-		AvailableCameras = availableCameras;
+                if ((int)format.FormatDescription.VideoCodecType == (int)CVPixelFormatType.CV420YpCbCr8BiPlanarVideoRange)
+                {
+                    continue;
+                }
 
-		return ValueTask.CompletedTask;
-	}
+                if (supportedResolutions.Contains(new(dimension.Width, dimension.Height)))
+                {
+                    continue;
+                }
 
-	static AVCaptureDeviceType[] InitializeCaptureDevices()
-	{
-		AVCaptureDeviceType[] deviceTypes =
-		[
-			AVCaptureDeviceType.BuiltInWideAngleCamera,
-			AVCaptureDeviceType.BuiltInTelephotoCamera,
-			AVCaptureDeviceType.BuiltInDualCamera
-		];
+                supportedFormats.Add(format);
+                supportedResolutions.Add(new(dimension.Width, dimension.Height));
+            }
 
-		if (UIDevice.CurrentDevice.CheckSystemVersion(11, 1))
-		{
-			deviceTypes = [.. deviceTypes,
-				AVCaptureDeviceType.BuiltInTrueDepthCamera];
-		}
+            var cameraInfo = new CameraInfo(device.LocalizedName,
+                device.UniqueID,
+                position,
+                device.HasFlash,
+                (float)device.MinAvailableVideoZoomFactor,
+                (float)device.MaxAvailableVideoZoomFactor,
+                supportedResolutions,
+                device,
+                supportedFormats
+            );
 
-		if (UIDevice.CurrentDevice.CheckSystemVersion(13, 0))
-		{
-			deviceTypes = [.. deviceTypes,
-				AVCaptureDeviceType.BuiltInUltraWideCamera,
-				AVCaptureDeviceType.BuiltInTripleCamera,
-				AVCaptureDeviceType.BuiltInDualWideCamera];
-		}
+            availableCameras.Add(cameraInfo);
+        }
 
-		if (UIDevice.CurrentDevice.CheckSystemVersion(15, 4))
-		{
-			deviceTypes = [.. deviceTypes,
-				AVCaptureDeviceType.BuiltInLiDarDepthCamera];
-		}
+        AvailableCameras = availableCameras;
 
-		return deviceTypes;
-	}
+        return ValueTask.CompletedTask;
+    }
 }
 #endif
